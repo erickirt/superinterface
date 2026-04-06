@@ -13,6 +13,8 @@ import { getTaskToolKey } from '@/lib/tasks/getTaskToolKey'
 import { scheduleTask } from '@/lib/tasks/scheduleTask'
 import { ensureTaskSchedule } from '@/lib/tasks/ensureTaskSchedule'
 import { TaskScheduleConflictError } from '@/lib/errors'
+import { defaultScheduler } from '@/lib/tasks/schedulers/defaultScheduler'
+import type { TaskScheduler } from '@/lib/tasks/schedulers/types'
 
 export const handleCreateTask = async ({
   taskHandler,
@@ -20,12 +22,16 @@ export const handleCreateTask = async ({
   assistant,
   thread,
   prisma,
+  scheduler = defaultScheduler,
+  callbackUrl,
 }: {
   taskHandler: CreateTaskHandler
   toolCall: OpenAI.Beta.Threads.Runs.RequiredActionFunctionToolCall
   assistant: Assistant
   thread: Thread
   prisma: PrismaClient
+  scheduler?: TaskScheduler
+  callbackUrl?: string
 }) => {
   const parsedArgs = parseTaskToolArgs({ toolCall, assistant, thread, prisma })
   if (!parsedArgs.ok) {
@@ -81,7 +87,7 @@ export const handleCreateTask = async ({
     },
   })
 
-  await scheduleTask({ task, prisma })
+  await scheduleTask({ task, prisma, scheduler, callbackUrl })
 
   return {
     tool_call_id: toolCall.id,

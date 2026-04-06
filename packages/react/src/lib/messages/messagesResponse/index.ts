@@ -9,15 +9,18 @@ type Args = {
   client: OpenAI
   threadId: string
   pageParam?: string
+  before?: string
 }
 
 export const messagesResponse = async ({
   client,
   threadId,
   pageParam,
+  before,
 }: Args): Promise<MessagesPage> => {
   const messagesResponse = await client.beta.threads.messages.list(threadId, {
     ...(pageParam ? { after: pageParam } : {}),
+    ...(before ? { before } : {}),
     limit,
   })
 
@@ -25,7 +28,7 @@ export const messagesResponse = async ({
     data: await data({
       client,
       messagesResponse,
-      pageParam,
+      pageParam: pageParam ?? before,
       threadId,
     }),
     hasNextPage: hasNextPage({ messagesResponse }),

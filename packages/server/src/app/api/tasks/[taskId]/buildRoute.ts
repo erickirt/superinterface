@@ -11,6 +11,8 @@ import { scheduleTask } from '@/lib/tasks/scheduleTask'
 import { cancelScheduledTask } from '@/lib/tasks/cancelScheduledTask'
 import { ensureTaskSchedule } from '@/lib/tasks/ensureTaskSchedule'
 import { TaskScheduleConflictError } from '@/lib/errors'
+import { defaultScheduler } from '@/lib/tasks/schedulers/defaultScheduler'
+import type { TaskScheduler } from '@/lib/tasks/schedulers/types'
 
 const updateTaskSchema = z.object({
   title: z.string().optional(),
@@ -93,7 +95,15 @@ export const buildGET =
   }
 
 export const buildPATCH =
-  ({ prisma }: { prisma: PrismaClient }) =>
+  ({
+    prisma,
+    scheduler = defaultScheduler,
+    callbackUrl,
+  }: {
+    prisma: PrismaClient
+    scheduler?: TaskScheduler
+    callbackUrl?: string
+  }) =>
   async (request: NextRequest, props: RouteProps) => {
     const { taskId } = await props.params
 
@@ -157,14 +167,14 @@ export const buildPATCH =
       throw error
     }
 
-    await cancelScheduledTask({ task: existingTask })
+    await cancelScheduledTask({ task: existingTask, scheduler })
 
     const task = await prisma.task.update({
       where: { id: existingTask.id },
       data: updateData,
     })
 
-    await scheduleTask({ task, prisma })
+    await scheduleTask({ task, prisma, scheduler, callbackUrl })
 
     return NextResponse.json(
       { task: serializeTask({ task }) },
@@ -173,7 +183,13 @@ export const buildPATCH =
   }
 
 export const buildDELETE =
-  ({ prisma }: { prisma: PrismaClient }) =>
+  ({
+    prisma,
+    scheduler = defaultScheduler,
+  }: {
+    prisma: PrismaClient
+    scheduler?: TaskScheduler
+  }) =>
   async (_request: NextRequest, props: RouteProps) => {
     const { taskId } = await props.params
 
@@ -195,7 +211,7 @@ export const buildDELETE =
       return NextResponse.json({ error: 'No task found' }, { status: 400 })
     }
 
-    await cancelScheduledTask({ task: existingTask })
+    await cancelScheduledTask({ task: existingTask, scheduler })
 
     const task = await prisma.task.delete({ where: { id: existingTask.id } })
 

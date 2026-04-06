@@ -14,6 +14,8 @@ import { scheduleTask } from '@/lib/tasks/scheduleTask'
 import { cancelScheduledTask } from '@/lib/tasks/cancelScheduledTask'
 import { ensureTaskSchedule } from '@/lib/tasks/ensureTaskSchedule'
 import { TaskScheduleConflictError } from '@/lib/errors'
+import { defaultScheduler } from '@/lib/tasks/schedulers/defaultScheduler'
+import type { TaskScheduler } from '@/lib/tasks/schedulers/types'
 
 export const handleUpdateTask = async ({
   taskHandler,
@@ -21,12 +23,16 @@ export const handleUpdateTask = async ({
   assistant,
   thread,
   prisma,
+  scheduler = defaultScheduler,
+  callbackUrl,
 }: {
   taskHandler: UpdateTaskHandler
   toolCall: OpenAI.Beta.Threads.Runs.RequiredActionFunctionToolCall
   assistant: Assistant
   thread: Thread
   prisma: PrismaClient
+  scheduler?: TaskScheduler
+  callbackUrl?: string
 }) => {
   const parsedArgs = parseTaskToolArgs({ toolCall, assistant, thread, prisma })
   if (!parsedArgs.ok) {
@@ -105,7 +111,7 @@ export const handleUpdateTask = async ({
     throw error
   }
 
-  await cancelScheduledTask({ task: existingTask })
+  await cancelScheduledTask({ task: existingTask, scheduler })
 
   const task = await prisma.task.update({
     where: {
@@ -120,7 +126,7 @@ export const handleUpdateTask = async ({
     data: updateData,
   })
 
-  await scheduleTask({ task, prisma })
+  await scheduleTask({ task, prisma, scheduler, callbackUrl })
 
   return {
     tool_call_id: toolCall.id,

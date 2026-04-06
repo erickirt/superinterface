@@ -135,6 +135,70 @@ describe('/api/assistants', () => {
       })
     })
 
+    it('does not require storageProviderAssistantId for OPENAI_RESPONSES', async () => {
+      const workspace = await createTestWorkspace()
+      const modelProvider = await createTestModelProvider({
+        data: { workspaceId: workspace.id },
+      })
+      const privateKey = await createTestApiKey({
+        data: { workspaceId: workspace.id, type: ApiKeyType.PRIVATE },
+      })
+
+      const appHandler = await import('../../src/app/api/assistants/route')
+
+      await testApiHandler({
+        appHandler,
+        test: async ({ fetch }) => {
+          const response = await fetch({
+            method: 'POST',
+            headers: { Authorization: `Bearer ${privateKey.value}` },
+            body: JSON.stringify({
+              storageProviderType: StorageProviderType.OPENAI_RESPONSES,
+              modelProviderId: modelProvider.id,
+              model: 'gpt-4o-mini',
+              name: 'Test OpenAI Responses Assistant',
+            }),
+          })
+
+          assert.strictEqual(response.status, 200)
+          const data = await response.json()
+          assert.strictEqual(data.assistant.storageProviderAssistantId, null)
+        },
+      })
+    })
+
+    it('does not require storageProviderAssistantId for AZURE_RESPONSES', async () => {
+      const workspace = await createTestWorkspace()
+      const modelProvider = await createTestModelProvider({
+        data: { workspaceId: workspace.id },
+      })
+      const privateKey = await createTestApiKey({
+        data: { workspaceId: workspace.id, type: ApiKeyType.PRIVATE },
+      })
+
+      const appHandler = await import('../../src/app/api/assistants/route')
+
+      await testApiHandler({
+        appHandler,
+        test: async ({ fetch }) => {
+          const response = await fetch({
+            method: 'POST',
+            headers: { Authorization: `Bearer ${privateKey.value}` },
+            body: JSON.stringify({
+              storageProviderType: StorageProviderType.AZURE_RESPONSES,
+              modelProviderId: modelProvider.id,
+              model: 'gpt-4o-mini',
+              name: 'Test Azure Responses Assistant',
+            }),
+          })
+
+          assert.strictEqual(response.status, 200)
+          const data = await response.json()
+          assert.strictEqual(data.assistant.storageProviderAssistantId, null)
+        },
+      })
+    })
+
     it('does not require storageProviderAssistantId for SUPERINTERFACE_CLOUD', async () => {
       const workspace = await createTestWorkspace()
       const modelProvider = await createTestModelProvider({
@@ -277,8 +341,9 @@ describe('/api/assistants', () => {
         },
       })
 
-      const appHandler =
-        await import('../../src/app/api/assistants/[assistantId]/route')
+      const appHandler = await import(
+        '../../src/app/api/assistants/[assistantId]/route'
+      )
 
       await testApiHandler({
         appHandler,
@@ -327,8 +392,9 @@ describe('/api/assistants', () => {
         },
       })
 
-      const appHandler =
-        await import('../../src/app/api/assistants/[assistantId]/route')
+      const appHandler = await import(
+        '../../src/app/api/assistants/[assistantId]/route'
+      )
 
       await testApiHandler({
         appHandler,
@@ -377,8 +443,9 @@ describe('/api/assistants', () => {
         },
       })
 
-      const appHandler =
-        await import('../../src/app/api/assistants/[assistantId]/route')
+      const appHandler = await import(
+        '../../src/app/api/assistants/[assistantId]/route'
+      )
 
       await testApiHandler({
         appHandler,
@@ -432,8 +499,9 @@ describe('/api/assistants', () => {
         },
       })
 
-      const appHandler =
-        await import('../../src/app/api/assistants/[assistantId]/route')
+      const appHandler = await import(
+        '../../src/app/api/assistants/[assistantId]/route'
+      )
 
       await testApiHandler({
         appHandler,
@@ -487,8 +555,9 @@ describe('/api/assistants', () => {
         },
       })
 
-      const appHandler =
-        await import('../../src/app/api/assistants/[assistantId]/route')
+      const appHandler = await import(
+        '../../src/app/api/assistants/[assistantId]/route'
+      )
 
       await testApiHandler({
         appHandler,
@@ -533,8 +602,9 @@ describe('/api/assistants', () => {
         },
       })
 
-      const appHandler =
-        await import('../../src/app/api/assistants/[assistantId]/route')
+      const appHandler = await import(
+        '../../src/app/api/assistants/[assistantId]/route'
+      )
 
       await testApiHandler({
         appHandler,
@@ -587,8 +657,9 @@ describe('/api/assistants', () => {
         },
       })
 
-      const appHandler =
-        await import('../../src/app/api/assistants/[assistantId]/route')
+      const appHandler = await import(
+        '../../src/app/api/assistants/[assistantId]/route'
+      )
 
       await testApiHandler({
         appHandler,
@@ -633,8 +704,9 @@ describe('/api/assistants', () => {
         },
       })
 
-      const appHandler =
-        await import('../../src/app/api/assistants/[assistantId]/route')
+      const appHandler = await import(
+        '../../src/app/api/assistants/[assistantId]/route'
+      )
 
       await testApiHandler({
         appHandler,
@@ -675,8 +747,9 @@ describe('/api/assistants', () => {
         },
       })
 
-      const appHandler =
-        await import('../../src/app/api/assistants/[assistantId]/route')
+      const appHandler = await import(
+        '../../src/app/api/assistants/[assistantId]/route'
+      )
 
       await testApiHandler({
         appHandler,

@@ -1,12 +1,17 @@
-import { qstash } from '@/lib/upstash/qstash'
 import { type Task } from '@prisma/client'
+import type { TaskScheduler } from './schedulers/types'
 
-export const cancelScheduledTask = async ({ task }: { task: Task }) => {
+export const cancelScheduledTask = async ({
+  task,
+  scheduler,
+}: {
+  task: Task
+  scheduler: TaskScheduler
+}) => {
   if (!task.qstashMessageId) return
-  if (process.env.NODE_ENV === 'test') return
 
   try {
-    await qstash.messages.delete(task.qstashMessageId)
+    await scheduler.messages.delete(task.qstashMessageId)
   } catch (error) {
     console.error('Failed to cancel scheduled task:', error)
   }

@@ -43,6 +43,7 @@ export const buildGET =
         assistantId: z.string().optional(),
         threadId: z.string().optional(),
         pageParam: z.string().optional(),
+        before: z.string().optional(),
       })
       .parse(Object.fromEntries(request.nextUrl.searchParams.entries()))
 
@@ -76,7 +77,7 @@ export const buildGET =
       )
     }
 
-    const { threadId, pageParam } = paramsResult
+    const { threadId, pageParam, before } = paramsResult
 
     const assistant = await prisma.assistant.findFirst({
       where: {
@@ -181,6 +182,7 @@ export const buildGET =
           threadId: storageThreadId,
           client: assistantClient,
           ...(pageParam ? { pageParam } : {}),
+          ...(before ? { before } : {}),
         }),
         {
           headers: cacheHeaders,

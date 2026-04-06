@@ -15,6 +15,8 @@ import { isAzureAgentsStorageProvider } from '@/lib/storageProviders/isAzureAgen
 import { url } from '@/lib/mcpServers/url'
 import { headers } from '@/lib/mcpServers/headers'
 import { getMcpServerLabel } from '@/lib/mcpServers/getMcpServerLabel'
+import { isOpenaiResponsesComputerUseModel } from '@/lib/tools/isOpenaiResponsesComputerUseModel'
+import { serializeComputerUseTool } from '@/lib/tools/serializeComputerUseTool'
 
 const serializeImageGenerationToolSize = ({
   tool,
@@ -42,6 +44,7 @@ const serializeImageGenerationToolSize = ({
 
 const nativeTools = ({
   assistant,
+  useOpenaiComputerTool,
 }: {
   assistant: Prisma.AssistantGetPayload<{
     include: {
@@ -57,6 +60,7 @@ const nativeTools = ({
       }
     }
   }>
+  useOpenaiComputerTool: boolean
 }): OpenAI.Beta.Assistants.AssistantTool[] =>
   assistant.tools
     .map((tool) => {
@@ -212,14 +216,10 @@ const nativeTools = ({
             storageProviderType: assistant.storageProviderType,
           })
         ) {
-          return {
-            type: 'computer_use_preview',
-            computer_use_preview: {
-              environment: tool.computerUseTool!.environment.toLowerCase(),
-              display_width: tool.computerUseTool!.displayWidth,
-              display_height: tool.computerUseTool!.displayHeight,
-            },
-          }
+          return serializeComputerUseTool({
+            tool,
+            useOpenaiComputerTool,
+          })
         }
 
         if (assistant.modelProvider.type === ModelProviderType.ANTHROPIC) {
@@ -237,14 +237,10 @@ const nativeTools = ({
           assistant.modelProvider.type === ModelProviderType.OPEN_ROUTER ||
           assistant.modelProvider.type === ModelProviderType.GOOGLE
         ) {
-          return {
-            type: 'computer_use_preview',
-            computer_use_preview: {
-              environment: tool.computerUseTool!.environment.toLowerCase(),
-              display_width: tool.computerUseTool!.displayWidth,
-              display_height: tool.computerUseTool!.displayHeight,
-            },
-          }
+          return serializeComputerUseTool({
+            tool,
+            useOpenaiComputerTool: false,
+          })
         }
 
         return null
@@ -317,6 +313,7 @@ const mcpServerTools = async ({
   assistant,
   thread,
   prisma,
+  useOpenaiComputerTool,
 }: {
   assistant: Prisma.AssistantGetPayload<{
     include: {
@@ -332,6 +329,7 @@ const mcpServerTools = async ({
   }>
   thread: Thread
   prisma: PrismaClient
+  useOpenaiComputerTool: boolean
 }) => {
   const nonComputerUseMcpServers = assistant.mcpServers.filter(
     (mcpServer) => !mcpServer.computerUseTool,
@@ -341,7 +339,7 @@ const mcpServerTools = async ({
     isResponsesStorageProvider({
       storageProviderType: assistant.storageProviderType,
     }) &&
-    !assistant.modelSlug.match('computer-use')
+    !useOpenaiComputerTool
   ) {
     return nonComputerUseMcpServers.map((mcpServer) => {
       const serverLabel = getMcpServerLabel({
@@ -408,6 +406,7 @@ export const tools = async ({
   const modelProviderConfig = modelProviderConfigs.find(
     (config) => config.type === assistant.modelProvider.type,
   )
+  const useOpenaiComputerTool = isOpenaiResponsesComputerUseModel({ assistant })
 
   if (!modelProviderConfig) return {}
   if (!modelProviderConfig.isFunctionCallingAvailable) {
@@ -416,12 +415,17 @@ export const tools = async ({
 
   return {
     tools: [
-      ...(await mcpServerTools({ assistant, thread, prisma })),
+      ...(await mcpServerTools({
+        assistant,
+        thread,
+        prisma,
+        useOpenaiComputerTool,
+      })),
       ...assistant.functions.map((fn) => ({
         type: 'function' as const,
         function: fn.openapiSpec as unknown as OpenAI.FunctionDefinition,
       })),
-      ...nativeTools({ assistant }),
+      ...nativeTools({ assistant, useOpenaiComputerTool }),
     ] as OpenAI.Beta.Assistants.AssistantTool[],
   }
 }

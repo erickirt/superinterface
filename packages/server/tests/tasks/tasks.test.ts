@@ -23,9 +23,9 @@ const publishJSONCalls: PublishCall[] = []
 const deleteCalls: string[] = []
 let nextPublishMessageId: string | null = null
 
-const qstashModuleMock: MockModuleOptions = {
+const schedulerModuleMock: MockModuleOptions = {
   namedExports: {
-    qstash: {
+    defaultScheduler: {
       publishJSON: async (args: PublishCall['args'][number]) => {
         const messageId = nextPublishMessageId ?? randomUUID()
         publishJSONCalls.push({ args: [args], messageId })
@@ -40,7 +40,7 @@ const qstashModuleMock: MockModuleOptions = {
   },
 }
 
-mock.module('@/lib/upstash/qstash', qstashModuleMock)
+mock.module('@/lib/tasks/schedulers/defaultScheduler', schedulerModuleMock)
 
 beforeEach(() => {
   publishJSONCalls.length = 0
@@ -494,6 +494,13 @@ describe('/api/tasks', () => {
           assert.strictEqual(
             publishJSONCalls[0].messageId,
             'new-boundary-message',
+          )
+          // Verify the default env-based callback URL is used (no callbackUrl passed to buildPOST)
+          assert.ok(
+            publishJSONCalls[0].args[0].url.endsWith(
+              '/api/cloud/tasks/callback',
+            ),
+            `Expected URL to end with /api/cloud/tasks/callback, got ${publishJSONCalls[0].args[0].url}`,
           )
 
           const serialized = serializeTask({ task: createdTask! })

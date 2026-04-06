@@ -147,6 +147,11 @@
       "types": "./dist/lib/tools/isToolConfigAvailable.d.ts",
       "import": "./dist/lib/tools/isToolConfigAvailable.js",
       "default": "./dist/lib/tools/isToolConfigAvailable.js"
+    },
+    "./lib/tasks/schedulers": {
+      "types": "./dist/lib/tasks/schedulers/index.d.ts",
+      "import": "./dist/lib/tasks/schedulers/index.js",
+      "default": "./dist/lib/tasks/schedulers/index.js"
     }
   },
   "scripts": {

@@ -9,6 +9,8 @@ import { getApiKey } from '@/lib/apiKeys/getApiKey'
 import { scheduleTask } from '@/lib/tasks/scheduleTask'
 import { ensureTaskSchedule } from '@/lib/tasks/ensureTaskSchedule'
 import { TaskScheduleConflictError } from '@/lib/errors'
+import { defaultScheduler } from '@/lib/tasks/schedulers/defaultScheduler'
+import type { TaskScheduler } from '@/lib/tasks/schedulers/types'
 
 export const buildGET =
   ({ prisma }: { prisma: PrismaClient }) =>
@@ -51,7 +53,15 @@ export const buildGET =
   }
 
 export const buildPOST =
-  ({ prisma }: { prisma: PrismaClient }) =>
+  ({
+    prisma,
+    scheduler = defaultScheduler,
+    callbackUrl,
+  }: {
+    prisma: PrismaClient
+    scheduler?: TaskScheduler
+    callbackUrl?: string
+  }) =>
   async (request: NextRequest) => {
     const headersList = await headers()
     const authorization = headersList.get('authorization')
@@ -125,7 +135,7 @@ export const buildPOST =
       },
     })
 
-    await scheduleTask({ task, prisma })
+    await scheduleTask({ task, prisma, scheduler, callbackUrl })
 
     return NextResponse.json(
       {
