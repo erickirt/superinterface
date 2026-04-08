@@ -17,6 +17,7 @@ import {
 } from '@modelcontextprotocol/sdk/types.js'
 import { connectMcpServer } from '@/lib/mcpServers/connectMcpServer'
 import type { McpConnection } from '@/types'
+import { getComputerCallActions } from '@/lib/computerCalls/getComputerCallActions'
 
 const getContent = ({
   mcpServerToolOutput,
@@ -120,8 +121,18 @@ export const handleComputerCall = async ({
     }
   }
 
-  // @ts-expect-error computer_call is compatability type
-  const rawAction = toolCall.computer_call.action
+  const { actions, acknowledgedSafetyChecks } = getComputerCallActions({
+    toolCall,
+  })
+
+  if (actions.length === 0) {
+    return {
+      tool_call_id: toolCall.id,
+      output: 'No computer actions provided.',
+    }
+  }
+
+  const rawAction = actions.length === 1 ? actions[0] : actions
 
   let mcpConnection: McpConnection | null = null
   try {
@@ -133,28 +144,58 @@ export const handleComputerCall = async ({
     })
     mcpConnection = connection.mcpConnection
 
-    const mcpServerToolOutput = (await mcpConnection.client.callTool(
-      {
-        name: 'computer_call',
-        arguments: { action: rawAction },
-      },
-      CallToolResultSchema,
-      {
-        timeout: 300000,
-      },
-    )) as CallToolResult
+    let mcpServerToolOutput: CallToolResult | null = null
 
-    const acknowledgedSafetyChecks =
-      // @ts-expect-error compat
-      toolCall.computer_call.pending_safety_checks.map((psc) => ({
-        id: psc.id,
-      }))
+    for (const action of actions) {
+      mcpServerToolOutput = (await mcpConnection.client.callTool(
+        {
+          name: 'computer_call',
+          arguments: { action },
+        },
+        CallToolResultSchema,
+        {
+          timeout: 300000,
+        },
+      )) as CallToolResult
+    }
+
+    if (!mcpServerToolOutput) {
+      throw new Error('No computer output returned.')
+    }
 
     const imageUrl = getImageUrl({
       mcpServerToolOutput,
     })
 
     if (!imageUrl) {
+      const screenshotOutput = (await mcpConnection.client.callTool(
+        {
+          name: 'computer_call',
+          arguments: {
+            action: { type: 'screenshot' },
+          },
+        },
+        CallToolResultSchema,
+        {
+          timeout: 300000,
+        },
+      )) as CallToolResult
+
+      const screenshotUrl = getImageUrl({
+        mcpServerToolOutput: screenshotOutput,
+      })
+
+      if (screenshotUrl) {
+        return {
+          tool_call_id: toolCall.id,
+          output: serializeOutput({
+            imageUrl: screenshotUrl,
+            assistant,
+          }),
+          acknowledged_safety_checks: acknowledgedSafetyChecks,
+        }
+      }
+
       return {
         tool_call_id: toolCall.id,
         output:

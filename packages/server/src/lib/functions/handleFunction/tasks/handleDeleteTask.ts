@@ -10,6 +10,8 @@ import { deleteTaskSchema } from '@/lib/tasks/schemas'
 import { parseTaskToolArgs } from '@/lib/tasks/parseTaskToolArgs'
 import { getTaskToolKey } from '@/lib/tasks/getTaskToolKey'
 import { cancelScheduledTask } from '@/lib/tasks/cancelScheduledTask'
+import { defaultScheduler } from '@/lib/tasks/schedulers/defaultScheduler'
+import type { TaskScheduler } from '@/lib/tasks/schedulers/types'
 
 export const handleDeleteTask = async ({
   taskHandler,
@@ -17,12 +19,14 @@ export const handleDeleteTask = async ({
   assistant,
   thread,
   prisma,
+  scheduler = defaultScheduler,
 }: {
   taskHandler: DeleteTaskHandler
   toolCall: OpenAI.Beta.Threads.Runs.RequiredActionFunctionToolCall
   assistant: Assistant
   thread: Thread
   prisma: PrismaClient
+  scheduler?: TaskScheduler
 }) => {
   const parsedArgs = parseTaskToolArgs({ toolCall, assistant, thread, prisma })
   if (!parsedArgs.ok)
@@ -58,7 +62,7 @@ export const handleDeleteTask = async ({
     return { tool_call_id: toolCall.id, output: 'Task not found.' }
   }
 
-  await cancelScheduledTask({ task: existing })
+  await cancelScheduledTask({ task: existing, scheduler })
 
   const task = await prisma.task.delete({ where: { id: args.taskId } })
 

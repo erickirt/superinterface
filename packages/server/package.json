@@ -147,6 +147,11 @@
       "types": "./dist/lib/tools/isToolConfigAvailable.d.ts",
       "import": "./dist/lib/tools/isToolConfigAvailable.js",
       "default": "./dist/lib/tools/isToolConfigAvailable.js"
+    },
+    "./lib/tasks/schedulers": {
+      "types": "./dist/lib/tasks/schedulers/index.d.ts",
+      "import": "./dist/lib/tasks/schedulers/index.js",
+      "default": "./dist/lib/tasks/schedulers/index.js"
     }
   },
   "scripts": {
@@ -164,7 +169,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.67.0",
     "@azure/ai-projects": "^1.0.1",
-    "@azure/ai-projects-v2": "npm:@azure/ai-projects@2.0.0-alpha.20251223.1",
+    "@azure/ai-projects-v2": "npm:@azure/ai-projects@2.0.2",
     "@azure/identity": "^4.13.0",
     "@clack/prompts": "^0.11.0",
     "@google/genai": "^1.41.0",
@@ -186,7 +191,7 @@
     "prisma": "^6.18.0",
     "prisma-json-types-generator": "^3.6.2",
     "replicate": "^1.3.0",
-    "supercompat": "^3.18.1",
+    "supercompat": "^4.0.0",
     "tsx": "^4.20.6",
     "uuid": "^13.0.0",
     "zod": "^3.23.8"

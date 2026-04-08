@@ -10,6 +10,8 @@ import {
 import { assistantClientAdapter } from '@/lib/assistants/assistantClientAdapter'
 import { createRunOpts } from '@/lib/runs/createRunOpts'
 import { scheduleTask } from '@/lib/tasks/scheduleTask'
+import { defaultScheduler } from '@/lib/tasks/schedulers/defaultScheduler'
+import type { TaskScheduler } from '@/lib/tasks/schedulers/types'
 import { handleToolCall } from '@/lib/toolCalls/handleToolCall'
 import { createLog } from '@/lib/logs/createLog'
 import { storageThreadId as getStorageThreadId } from '@/lib/threads/storageThreadId'
@@ -21,7 +23,15 @@ import { serializeMetadata } from '@/lib/metadata/serializeMetadata'
 export const maxDuration = 800
 
 const buildPostHandler =
-  ({ prisma }: { prisma: PrismaClient }) =>
+  ({
+    prisma,
+    scheduler = defaultScheduler,
+    callbackUrl,
+  }: {
+    prisma: PrismaClient
+    scheduler?: TaskScheduler
+    callbackUrl?: string
+  }) =>
   async (request: Request) => {
     const { taskId } = await request.json()
     const task = await prisma.task.findUnique({
@@ -284,13 +294,21 @@ const buildPostHandler =
       }
     }
 
-    await scheduleTask({ task, prisma })
+    await scheduleTask({ task, prisma, scheduler, callbackUrl })
 
     return NextResponse.json({ ok: true })
   }
 
-export const buildPOST = ({ prisma }: { prisma: PrismaClient }) => {
-  const postHandler = buildPostHandler({ prisma })
+export const buildPOST = ({
+  prisma,
+  scheduler = defaultScheduler,
+  callbackUrl,
+}: {
+  prisma: PrismaClient
+  scheduler?: TaskScheduler
+  callbackUrl?: string
+}) => {
+  const postHandler = buildPostHandler({ prisma, scheduler, callbackUrl })
 
   return process.env.NODE_ENV === 'test' ||
     !process.env.QSTASH_CURRENT_SIGNING_KEY

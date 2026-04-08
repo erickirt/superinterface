@@ -1,9 +1,11 @@
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc'
 import timezone from 'dayjs/plugin/timezone'
+import duration from 'dayjs/plugin/duration'
 
 dayjs.extend(utc)
 dayjs.extend(timezone)
+dayjs.extend(duration)
 
 type TaskSchedule = PrismaJson.TaskSchedule
 type Unit = 'second' | 'minute' | 'hour' | 'day' | 'week' | 'month' | 'year'
@@ -43,8 +45,21 @@ export const getNextOccurrence = ({
   const base = hasOffset ? dayjs(start).tz(timeZone) : dayjs.tz(start, timeZone)
   const cursor = dayjs.tz(now, timeZone).add(1, 'second')
 
-  if (recurrenceRules.length === 0)
-    return base.isAfter(cursor) ? base.toISOString() : null
+  if (recurrenceRules.length === 0) {
+    if (base.isAfter(cursor)) return base.toISOString()
+
+    // Continuous task: start + duration defines the active window.
+    // If we're still within it, fire immediately (return now).
+    const { duration: dur } = schedule as any
+    if (typeof dur === 'string') {
+      const end = base.add(dayjs.duration(dur))
+      if (dayjs.tz(now, timeZone).isBefore(end)) {
+        return dayjs.tz(now, timeZone).toISOString()
+      }
+    }
+
+    return null
+  }
 
   let best: dayjs.Dayjs | null = null
 

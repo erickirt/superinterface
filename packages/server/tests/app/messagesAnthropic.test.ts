@@ -21,9 +21,10 @@ const STREAM_ID = 'a1c19514-7623-400e-abeb-7b4defeebdbb'
 
 describe('/api/messages anthropic tool calls', () => {
   it('handles anthropic request tool calls with empty arguments', async (t) => {
-    const anthropicKey = process.env.ANTHROPIC_API_KEY
+    const anthropicKey =
+      process.env.ANTHROPIC_API_KEY || process.env.TEST_ANTHROPIC_API_KEY
     if (!anthropicKey) {
-      t.skip('ANTHROPIC_API_KEY is not configured')
+      t.skip('ANTHROPIC_API_KEY or TEST_ANTHROPIC_API_KEY is not configured')
       return
     }
 
@@ -42,9 +43,9 @@ describe('/api/messages anthropic tool calls', () => {
         workspaceId: workspace.id,
         modelProviderId: modelProvider.id,
         storageProviderType: StorageProviderType.SUPERINTERFACE_CLOUD,
-        modelSlug: 'claude-3-5-sonnet-20241022',
+        modelSlug: 'claude-sonnet-4-20250514',
         instructions:
-          'Always call the getComments function before responding to the user.',
+          'You MUST call the getComments function before responding. Do not respond with text first — always call getComments immediately.',
       },
     })
 

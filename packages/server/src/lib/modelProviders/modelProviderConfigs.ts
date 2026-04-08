@@ -17,6 +17,7 @@ export const modelProviderConfigs: ModelProviderConfig[] = [
       'gpt-4o-2024-11-20',
       'gpt-4o-2024-05-13',
       'chatgpt-4o-latest',
+      'gpt-5.4',
       'o1-preview',
       'o1-preview-2024-09-12',
       'o1-mini',

@@ -11,6 +11,7 @@ import { z } from 'zod'
 import { cacheHeaders } from '@/lib/cache/cacheHeaders'
 import { serializeApiAssistant } from '@/lib/assistants/serializeApiAssistant'
 import { getApiKey } from '@/lib/apiKeys/getApiKey'
+import { openaiAssistantsStorageProviderTypes } from '@/lib/storageProviders/openaiAssistantsStorageProviderTypes'
 
 const createAssistantSchema = z
   .object({
@@ -27,22 +28,24 @@ const createAssistantSchema = z
     truncationLastMessagesCount: z.number().int().nullable().optional(),
   })
   .superRefine((data, ctx) => {
-    if (
-      data.storageProviderType === StorageProviderType.SUPERINTERFACE_CLOUD &&
-      data.storageProviderAssistantId
-    ) {
+    const storageTypesWithAssistantId: StorageProviderType[] = [
+      ...openaiAssistantsStorageProviderTypes,
+      StorageProviderType.AZURE_AGENTS,
+    ]
+    const needsAssistantId = storageTypesWithAssistantId.includes(
+      data.storageProviderType,
+    )
+
+    if (!needsAssistantId && data.storageProviderAssistantId) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message:
-          'storageProviderAssistantId should not be provided for SUPERINTERFACE_CLOUD',
+          'storageProviderAssistantId should not be provided for this storage provider',
         path: ['storageProviderAssistantId'],
       })
     }
 
-    if (
-      data.storageProviderType !== StorageProviderType.SUPERINTERFACE_CLOUD &&
-      !data.storageProviderAssistantId
-    ) {
+    if (needsAssistantId && !data.storageProviderAssistantId) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message:

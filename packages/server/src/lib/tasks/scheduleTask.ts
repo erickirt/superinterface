@@ -2,9 +2,9 @@ import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc'
 import timezone from 'dayjs/plugin/timezone'
 
-import { qstash } from '@/lib/upstash/qstash'
 import { type Task, type PrismaClient } from '@prisma/client'
 import { getNextOccurrence } from './getNextOccurrence'
+import type { TaskScheduler } from './schedulers/types'
 
 dayjs.extend(utc)
 dayjs.extend(timezone)
@@ -12,9 +12,13 @@ dayjs.extend(timezone)
 export const scheduleTask = async ({
   task,
   prisma,
+  scheduler,
+  callbackUrl = `${process.env.NEXT_PUBLIC_SUPERINTERFACE_BASE_URL}/api/cloud/tasks/callback`,
 }: {
   task: Task
   prisma: PrismaClient
+  scheduler: TaskScheduler
+  callbackUrl?: string
 }) => {
   if (!task.schedule || typeof task.schedule !== 'object') return
 
@@ -27,16 +31,27 @@ export const scheduleTask = async ({
 
   const delay = Math.max(0, next.diff(dayjs.utc(), 'second'))
 
-  const { messageId } = await qstash.publishJSON({
-    url: `${process.env.NEXT_PUBLIC_SUPERINTERFACE_BASE_URL}/api/cloud/tasks/callback`,
+  const { messageId } = await scheduler.publishJSON({
+    url: callbackUrl,
     body: { taskId: task.id },
     delay,
   })
 
-  if (!messageId) throw new Error('Failed to schedule task: missing QStash ID')
-
-  await prisma.task.update({
-    where: { id: task.id },
-    data: { qstashMessageId: messageId },
-  })
+  try {
+    await prisma.task.update({
+      where: { id: task.id },
+      data: { qstashMessageId: messageId },
+    })
+  } catch (error: unknown) {
+    // Task was deleted while callback was in flight (e.g. continuous mode toggled off)
+    if (
+      error instanceof Error &&
+      'code' in error &&
+      (error as any).code === 'P2025'
+    ) {
+      await scheduler.messages.delete(messageId)
+      return
+    }
+    throw error
+  }
 }
