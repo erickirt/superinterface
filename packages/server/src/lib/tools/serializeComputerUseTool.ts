@@ -23,18 +23,23 @@ export const serializeComputerUseTool = ({
   tool: ComputerUseToolLike
   useOpenaiComputerTool: boolean
 }) => {
+  const config = {
+    environment: serializeEnvironment({
+      environment: tool.computerUseTool!.environment,
+    }),
+    display_width: tool.computerUseTool!.displayWidth,
+    display_height: tool.computerUseTool!.displayHeight,
+  }
+
   if (useOpenaiComputerTool) {
-    return { type: 'computer' } as any
+    return {
+      type: 'computer',
+      computer: config,
+    } as any
   }
 
   return {
     type: 'computer_use_preview',
-    computer_use_preview: {
-      environment: serializeEnvironment({
-        environment: tool.computerUseTool!.environment,
-      }),
-      display_width: tool.computerUseTool!.displayWidth,
-      display_height: tool.computerUseTool!.displayHeight,
-    },
+    computer_use_preview: config,
   } as any
 }

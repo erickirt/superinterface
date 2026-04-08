@@ -14,7 +14,7 @@ import {
   azureResponsesStorageAdapter,
   azureAgentsStorageAdapter,
   azureAgentsRunAdapter,
-} from 'supercompat'
+} from 'supercompat/openaiAssistants'
 import { AIProjectClient as AIProjectClientV1 } from '@azure/ai-projects'
 import { isOpenaiAssistantsStorageProvider } from '@/lib/storageProviders/isOpenaiAssistantsStorageProvider'
 import { isResponsesStorageProvider } from '@/lib/storageProviders/isResponsesStorageProvider'
@@ -60,7 +60,7 @@ const storageAdapter = ({
       storageProviderType: assistant.storageProviderType,
     })
   ) {
-    return responsesStorageAdapter()
+    return responsesStorageAdapter({ deferItemCreationUntilRun: true })
   }
 
   if (

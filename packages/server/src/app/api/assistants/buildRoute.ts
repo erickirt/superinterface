@@ -28,7 +28,11 @@ const createAssistantSchema = z
     truncationLastMessagesCount: z.number().int().nullable().optional(),
   })
   .superRefine((data, ctx) => {
-    const needsAssistantId = openaiAssistantsStorageProviderTypes.includes(
+    const storageTypesWithAssistantId: StorageProviderType[] = [
+      ...openaiAssistantsStorageProviderTypes,
+      StorageProviderType.AZURE_AGENTS,
+    ]
+    const needsAssistantId = storageTypesWithAssistantId.includes(
       data.storageProviderType,
     )
 
