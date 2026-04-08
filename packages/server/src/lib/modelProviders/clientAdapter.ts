@@ -14,7 +14,7 @@ import {
   anthropicClientAdapter,
   azureAiProjectClientAdapter,
   openRouterClientAdapter,
-} from 'supercompat/openaiAssistants'
+} from 'supercompat/openai'
 import { AIProjectClient as AIProjectClientV1 } from '@azure/ai-projects'
 import {
   ModelProvider,

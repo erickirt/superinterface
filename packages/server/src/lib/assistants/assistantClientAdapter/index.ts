@@ -14,7 +14,7 @@ import {
   azureResponsesStorageAdapter,
   azureAgentsStorageAdapter,
   azureAgentsRunAdapter,
-} from 'supercompat/openaiAssistants'
+} from 'supercompat/openai'
 import { AIProjectClient as AIProjectClientV1 } from '@azure/ai-projects'
 import { isOpenaiAssistantsStorageProvider } from '@/lib/storageProviders/isOpenaiAssistantsStorageProvider'
 import { isResponsesStorageProvider } from '@/lib/storageProviders/isResponsesStorageProvider'

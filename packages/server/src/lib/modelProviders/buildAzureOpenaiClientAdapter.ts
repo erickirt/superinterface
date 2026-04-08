@@ -1,6 +1,6 @@
 import { ModelProvider } from '@prisma/client'
 import { AzureOpenAI } from 'openai'
-import { azureOpenaiClientAdapter } from 'supercompat/openaiAssistants'
+import { azureOpenaiClientAdapter } from 'supercompat/openai'
 
 export const buildAzureOpenaiClientAdapter = ({
   modelProvider,
