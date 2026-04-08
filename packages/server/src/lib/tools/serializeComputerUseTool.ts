@@ -35,11 +35,11 @@ export const serializeComputerUseTool = ({
     return {
       type: 'computer',
       computer: config,
-    } as any
+    } as unknown
   }
 
   return {
     type: 'computer_use_preview',
     computer_use_preview: config,
-  } as any
+  } as unknown
 }

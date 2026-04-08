@@ -15,7 +15,8 @@ const getPendingSafetyChecks = ({
 }: {
   toolCall: OpenAI.Beta.Threads.Runs.RequiredActionFunctionToolCall
 }) => {
-  const computerCall = (toolCall as any).computer_call
+  const computerCall = (toolCall as unknown as Record<string, unknown>)
+    .computer_call
 
   if (
     !isRecord(computerCall) ||
@@ -39,7 +40,8 @@ export const getComputerCallActions = ({
 }: {
   toolCall: OpenAI.Beta.Threads.Runs.RequiredActionFunctionToolCall
 }) => {
-  const computerCall = (toolCall as any).computer_call
+  const computerCall = (toolCall as unknown as Record<string, unknown>)
+    .computer_call
 
   if (!isRecord(computerCall)) {
     return {

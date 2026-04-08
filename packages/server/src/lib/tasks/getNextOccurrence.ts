@@ -50,7 +50,7 @@ export const getNextOccurrence = ({
 
     // Continuous task: start + duration defines the active window.
     // If we're still within it, fire immediately (return now).
-    const { duration: dur } = schedule as any
+    const { duration: dur } = schedule as Record<string, unknown>
     if (typeof dur === 'string') {
       const end = base.add(dayjs.duration(dur))
       if (dayjs.tz(now, timeZone).isBefore(end)) {

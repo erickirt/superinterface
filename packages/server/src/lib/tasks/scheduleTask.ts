@@ -47,7 +47,7 @@ export const scheduleTask = async ({
     if (
       error instanceof Error &&
       'code' in error &&
-      (error as any).code === 'P2025'
+      (error as unknown as Record<string, unknown>).code === 'P2025'
     ) {
       await scheduler.messages.delete(messageId)
       return
