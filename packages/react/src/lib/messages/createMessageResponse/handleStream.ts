@@ -2,6 +2,7 @@ import { serializeMessage } from '@/lib/messages/serializeMessage'
 import { serializeRun } from '@/lib/runs/serializeRun'
 import { serializeRunStep } from '@/lib/runSteps/serializeRunStep'
 import { enqueueJson } from '@/lib/streams/enqueueJson'
+import { safeStreamIterator } from '@/lib/streams/safeStreamIterator'
 import { actionsStream } from './actionsStream'
 
 export const handleStream = async ({
@@ -25,8 +26,7 @@ export const handleStream = async ({
     data: any
   }) => void
 }) => {
-  // @ts-ignore-next-line
-  for await (const value of stream) {
+  for await (const value of safeStreamIterator(stream as any)) {
     onEvent({ controller, event: value.event, data: value.data })
 
     if (
