@@ -10,7 +10,7 @@ RUN apk add --no-cache openssl
 RUN npm init -y
 
 ARG VERSION
-RUN npm install --omit=dev @superinterface/server@${VERSION} next@15.5.4
+RUN npm install --omit=dev @superinterface/server@${VERSION} next@15.5.9
 
 WORKDIR /app/node_modules/@superinterface/server
 RUN npx prisma generate
