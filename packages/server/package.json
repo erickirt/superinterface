@@ -1,6 +1,6 @@
 {
   "name": "@superinterface/server",
-  "version": "1.9.4",
+  "version": "1.9.5",
   "type": "module",
   "bin": {
     "superinterface-server": "./bin/index.cjs"
@@ -179,7 +179,7 @@
     "@openrouter/sdk": "^0.8.0",
     "@prisma/adapter-neon": "^6.18.0",
     "@prisma/client": "^6.18.0",
-    "@superinterface/react": "^5.4.5",
+    "@superinterface/react": "^5.4.7",
     "@upstash/qstash": "^2.8.4",
     "@upstash/redis": "^1.35.6",
     "@upstash/workflow": "^0.2.21",
