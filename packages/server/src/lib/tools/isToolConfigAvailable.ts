@@ -30,6 +30,10 @@ export const toolConfigs: ToolConfig[] = [
         modelProviderType: ModelProviderType.AZURE_OPENAI,
         storageProviderType: StorageProviderType.AZURE_RESPONSES,
       },
+      {
+        modelProviderType: ModelProviderType.AZURE_AI_PROJECT,
+        storageProviderType: StorageProviderType.AZURE_RESPONSES,
+      },
     ],
   },
   {
@@ -54,6 +58,10 @@ export const toolConfigs: ToolConfig[] = [
       {
         modelProviderType: ModelProviderType.AZURE_AI_PROJECT,
         storageProviderType: StorageProviderType.AZURE_AGENTS,
+      },
+      {
+        modelProviderType: ModelProviderType.AZURE_AI_PROJECT,
+        storageProviderType: StorageProviderType.AZURE_RESPONSES,
       },
     ],
   },
@@ -121,6 +129,10 @@ export const toolConfigs: ToolConfig[] = [
       {
         modelProviderType: ModelProviderType.AZURE_AI_PROJECT,
         storageProviderType: StorageProviderType.AZURE_AGENTS,
+      },
+      {
+        modelProviderType: ModelProviderType.AZURE_AI_PROJECT,
+        storageProviderType: StorageProviderType.AZURE_RESPONSES,
       },
     ],
   },
