@@ -276,14 +276,72 @@ describe('full markdown pipeline', () => {
     })
   })
 
+  describe('broken annotation pipeline', () => {
+    test('broken annotations render correctly without eating text', async () => {
+      const text =
+        'The company reported strong Q3 results with revenue growth across all segments【4:0†quarterly-report.pdf】.  \nKey highlights include a **15% increase** in cloud services【4:0†quarterly-report.pdf】 【4:1†investor-presentation.pdf】 :  \n  - Cloud revenue: **$2.4 billion**  \n  - Enterprise clients: **850 new contracts**  \n  - Operating margin: **22%**'
+      const ann0 = '【4:0†quarterly-report.pdf】'
+      const ann1text =
+        'a **15% increase** in cloud services【4:0†quarterly-report.pdf】 【4:1†investo'
+      const ann2text =
+        '15% increase** in cloud services【4:0†quarterly-report.pdf】 【4:1†investor-presentation.pdf】'
+      const annotations = [
+        {
+          type: 'file_citation',
+          text: ann0,
+          start_index: text.indexOf(ann0),
+          end_index: text.indexOf(ann0) + ann0.length,
+          file_citation: { file_id: 'file-a' },
+        },
+        {
+          type: 'file_citation',
+          text: ann1text,
+          start_index: text.indexOf(ann1text),
+          end_index: text.indexOf(ann1text) + ann1text.length,
+          file_citation: { file_id: 'file-a' },
+        },
+        {
+          type: 'file_citation',
+          text: ann2text,
+          start_index: text.indexOf(ann2text),
+          end_index: text.indexOf(ann2text) + ann2text.length,
+          file_citation: { file_id: 'file-b' },
+        },
+      ]
+      const result = await compileFullPipeline(text, annotations)
+
+      // The first annotation is a valid marker — should render as annotation component
+      expect(result).toContain('_components.annotation')
+
+      // Key content must not be eaten
+      expect(result).toContain('The company reported strong Q3 results')
+      expect(result).toContain('15% increase')
+      expect(result).toContain('Cloud revenue')
+      expect(result).toContain('$2.4 billion')
+      expect(result).toContain('22%')
+
+      // Leftover 【...】 markers should not appear as raw rendered text.
+      // They may appear inside data-annotation JSON strings (which is fine),
+      // but not as direct text content in the output.
+      const lines = result.split('\n')
+      const textContentLines = lines.filter(
+        (l) =>
+          l.includes('investor-presentation.pdf】') &&
+          !l.includes('data-annotation'),
+      )
+      expect(textContentLines).toHaveLength(0)
+    })
+  })
+
   describe('annotation plugin interaction', () => {
     test('text with file_citation annotation compiles to annotation element', async () => {
-      const text = 'See the source for details.'
+      const text = 'See the source for details【4:0†source.pdf】.'
+      const annText = '【4:0†source.pdf】'
       const annotation = {
         type: 'file_citation',
-        text: 'source',
-        start_index: 8,
-        end_index: 14,
+        text: annText,
+        start_index: text.indexOf(annText),
+        end_index: text.indexOf(annText) + annText.length,
         file_citation: { file_id: 'file-123' },
       }
       const result = await compileFullPipeline(text, [annotation])

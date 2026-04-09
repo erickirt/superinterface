@@ -18,27 +18,116 @@ interface AnnotationNode extends Literal {
   }
 }
 
+const markerPattern = /^【[^】]+】$/
+
+/**
+ * Detect broken annotations: annotation.text should always be a complete 【...】 marker
+ * (per OpenAI Assistants API docs). If any annotation's text is not a marker, the
+ * response has broken annotations (Azure bug) and we strip unmatched markers.
+ */
+const hasBrokenAnnotations = (
+  annotations: OpenAI.Beta.Threads.Messages.Annotation[],
+) =>
+  annotations.length > 0 && annotations.some((a) => !markerPattern.test(a.text))
+
 const sortedAnnotations = ({
   content,
 }: {
   content: OpenAI.Beta.Threads.Messages.TextContentBlock
-}) => content.text.annotations.sort((a, b) => a.start_index - b.start_index)
+}) => {
+  const annotations = content.text.annotations
+
+  // If all annotations are valid markers (OpenAI format), use as-is
+  if (!hasBrokenAnnotations(annotations)) {
+    return annotations.sort((a, b) => a.start_index - b.start_index)
+  }
+
+  // Broken annotations detected (Azure bug): only keep valid marker annotations
+  return annotations
+    .filter((a) => markerPattern.test(a.text))
+    .sort((a, b) => a.start_index - b.start_index)
+}
 
 export const remarkAnnotation = ({
   content,
 }: {
   content: OpenAI.Beta.Threads.Messages.TextContentBlock
 }) => {
+  const broken = hasBrokenAnnotations(content.text?.annotations ?? [])
+
   return () => {
     return (tree: any) => {
       flatMap(tree, (node: Node) => {
         if (node.type === 'text' || node.type === 'link') {
-          return processNodeWithAnnotations({ node, content })
+          const result = processNodeWithAnnotations({ node, content })
+
+          // If broken annotations detected, strip leftover 【...】 markers from text nodes
+          if (broken) {
+            return result.flatMap((n: Node) => {
+              if (n.type === 'text') {
+                return stripMarkers(n as Text)
+              }
+              return [n]
+            })
+          }
+
+          return result
         }
         return [node]
       })
+
+      // If broken annotations detected, append invalid annotations as nodes at the end
+      if (broken) {
+        const invalidAnnotations = content.text.annotations.filter(
+          (a) => !markerPattern.test(a.text),
+        )
+        if (invalidAnnotations.length > 0) {
+          const annotationNodes: AnnotationNode[] = invalidAnnotations.map(
+            (annotation) => ({
+              type: 'annotation' as const,
+              value: '',
+              data: {
+                hName: 'annotation' as const,
+                hProperties: {
+                  ['data-annotation']: JSON.stringify(annotation),
+                },
+              },
+            }),
+          )
+          // Append a paragraph containing all invalid annotation nodes
+          tree.children.push({
+            type: 'paragraph',
+            children: annotationNodes,
+          })
+        }
+      }
     }
   }
+}
+
+/**
+ * Strip 【...】 markers from a text node, splitting it into parts.
+ * Used when Azure returns broken annotations and some markers have no valid annotation.
+ */
+const stripMarkers = (node: Text): Node[] => {
+  if (!node.value.includes('【')) return [node]
+
+  const parts = node.value.split(/【[^】]+】/)
+  if (parts.length === 1) return [node] // no markers found
+
+  const nodes: Node[] = []
+  for (const part of parts) {
+    if (part) {
+      nodes.push({
+        type: 'text',
+        value: part,
+        position: node.position,
+      } as Text)
+    }
+  }
+  return nodes.length > 0
+    ? nodes
+    : [{ type: 'text', value: '', position: node.position } as Text]
 }
 
 const processNodeWithAnnotations = ({
