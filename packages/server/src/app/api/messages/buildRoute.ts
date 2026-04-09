@@ -696,7 +696,7 @@ export const buildPOST =
                 requestRoute: LogRequestRoute.MESSAGES,
                 level: LogLevel.ERROR,
                 status: 500,
-                message: `Thread Run failed: ${data.last_error?.message}`,
+                message: `Thread Run failed: ${data.last_error?.message ?? 'Unknown error'}${data.last_error?.code ? ` (code: ${data.last_error.code})` : ''}${data.id ? ` [run: ${data.id}]` : ''}`,
                 workspaceId: assistant.workspaceId,
                 assistantId: assistant.id,
                 threadId: thread.id,
