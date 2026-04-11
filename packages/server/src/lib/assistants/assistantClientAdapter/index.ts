@@ -9,8 +9,8 @@ import {
   supercompat,
   prismaStorageAdapter,
   completionsRunAdapter,
-  responsesRunAdapter,
-  responsesStorageAdapter,
+  openaiResponsesRunAdapter,
+  openaiResponsesStorageAdapter,
   azureResponsesStorageAdapter,
   azureAgentsStorageAdapter,
   azureAgentsRunAdapter,
@@ -60,7 +60,7 @@ const storageAdapter = ({
       storageProviderType: assistant.storageProviderType,
     })
   ) {
-    return responsesStorageAdapter({ deferItemCreationUntilRun: true })
+    return openaiResponsesStorageAdapter({ deferItemCreationUntilRun: true })
   }
 
   if (
@@ -133,7 +133,7 @@ const runAdapter = ({
       storageProviderType: assistant.storageProviderType,
     })
   ) {
-    return responsesRunAdapter({
+    return openaiResponsesRunAdapter({
       getOpenaiAssistant: buildGetOpenaiAssistant({
         assistant,
         thread,
