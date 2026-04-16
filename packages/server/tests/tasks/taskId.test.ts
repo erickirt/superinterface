@@ -337,7 +337,8 @@ describe('/api/tasks/[taskId]', () => {
       nextPublishMessageId = 'new-message-id'
 
       const originalNodeEnv = process.env.NODE_ENV
-      process.env.NODE_ENV = 'production'
+      const env = process.env as { NODE_ENV?: string }
+      env.NODE_ENV = 'production'
 
       try {
         await testApiHandler({
@@ -386,7 +387,7 @@ describe('/api/tasks/[taskId]', () => {
           },
         })
       } finally {
-        process.env.NODE_ENV = originalNodeEnv
+        env.NODE_ENV = originalNodeEnv
       }
     })
   })

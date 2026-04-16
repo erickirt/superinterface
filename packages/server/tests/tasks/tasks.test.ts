@@ -378,7 +378,7 @@ describe('/api/tasks', () => {
         timeZone: 'UTC',
         recurrenceRules: [
           {
-            frequency: 'weekly',
+            frequency: 'weekly' as const,
             byDay: ['MO', 'WE', 'FR'],
             interval: 1,
           },

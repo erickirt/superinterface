@@ -2,6 +2,8 @@ import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import { getNextOccurrence } from '../../src/lib/tasks/getNextOccurrence'
 
+type TaskSchedule = PrismaJson.TaskSchedule
+
 describe('getNextOccurrence', () => {
   describe('one-shot schedule (no recurrenceRules)', () => {
     it('returns start when start is in the future', () => {
@@ -158,23 +160,29 @@ describe('getNextOccurrence', () => {
 
   describe('edge cases', () => {
     it('returns null for null schedule', () => {
-      const result = getNextOccurrence({ schedule: null as any })
+      const result = getNextOccurrence({
+        schedule: null as unknown as TaskSchedule,
+      })
       assert.equal(result, null)
     })
 
     it('returns null for non-object schedule', () => {
-      const result = getNextOccurrence({ schedule: 'invalid' as any })
+      const result = getNextOccurrence({
+        schedule: 'invalid' as unknown as TaskSchedule,
+      })
       assert.equal(result, null)
     })
 
     it('returns null for missing start', () => {
-      const result = getNextOccurrence({ schedule: {} as any })
+      const result = getNextOccurrence({
+        schedule: {} as unknown as TaskSchedule,
+      })
       assert.equal(result, null)
     })
 
     it('returns null for invalid start date', () => {
       const result = getNextOccurrence({
-        schedule: { start: 'not-a-date' } as any,
+        schedule: { start: 'not-a-date' } as unknown as TaskSchedule,
       })
       assert.equal(result, null)
     })
@@ -182,7 +190,10 @@ describe('getNextOccurrence', () => {
     it('returns null for invalid duration string', () => {
       const past = new Date(Date.now() - 60 * 1000).toISOString()
       const result = getNextOccurrence({
-        schedule: { start: past, duration: 'invalid' } as any,
+        schedule: {
+          start: past,
+          duration: 'invalid',
+        } as unknown as TaskSchedule,
       })
       // dayjs.duration('invalid') returns a duration of 0, so end = start
       // Since now > start + 0, should return null
@@ -192,7 +203,10 @@ describe('getNextOccurrence', () => {
     it('handles duration that is not a string gracefully', () => {
       const past = new Date(Date.now() - 60 * 1000).toISOString()
       const result = getNextOccurrence({
-        schedule: { start: past, duration: 12345 } as any,
+        schedule: {
+          start: past,
+          duration: 12345,
+        } as unknown as TaskSchedule,
       })
       // duration is not a string, should be ignored — returns null (past start, no recurrence)
       assert.equal(result, null)

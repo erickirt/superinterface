@@ -1,5 +1,6 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert'
+import type { NextRequest } from 'next/server'
 import {
   ApiKeyType,
   ModelProviderType,
@@ -12,6 +13,8 @@ import { createTestApiKey } from '../lib/apiKeys/createTestApiKey'
 import { createTestAssistant } from '../lib/assistants/createTestAssistant'
 import { clientAdapter } from '@/lib/modelProviders/clientAdapter'
 import { buildPOST } from '@/app/api/messages/buildRoute'
+
+type ClientAdapterArgs = Parameters<typeof clientAdapter>[0]
 
 const googleApiKey = process.env.TEST_GOOGLE_API_KEY
 
@@ -27,7 +30,7 @@ describe('Google', () => {
         },
       })
 
-      const adapter = clientAdapter({ modelProvider } as any)
+      const adapter = clientAdapter({ modelProvider } as ClientAdapterArgs)
       assert.ok(adapter, 'GOOGLE adapter should be created')
       assert.ok(adapter.client, 'GOOGLE adapter should have client')
     })
@@ -35,8 +38,9 @@ describe('Google', () => {
 
   describe('model provider config', () => {
     it('Google config supports SUPERINTERFACE_CLOUD storage', async () => {
-      const { modelProviderConfigs } =
-        await import('@/lib/modelProviders/modelProviderConfigs')
+      const { modelProviderConfigs } = await import(
+        '@/lib/modelProviders/modelProviderConfigs'
+      )
 
       const googleConfig = modelProviderConfigs.find(
         (config) => config.type === ModelProviderType.GOOGLE,
@@ -52,8 +56,9 @@ describe('Google', () => {
     })
 
     it('Google config has function calling available', async () => {
-      const { modelProviderConfigs } =
-        await import('@/lib/modelProviders/modelProviderConfigs')
+      const { modelProviderConfigs } = await import(
+        '@/lib/modelProviders/modelProviderConfigs'
+      )
 
       const googleConfig = modelProviderConfigs.find(
         (config) => config.type === ModelProviderType.GOOGLE,
@@ -109,7 +114,7 @@ describe('Google', () => {
           assistantId: assistant.id,
           content: 'What is 2 + 2? Reply with just the number.',
         }),
-      }) as any
+      }) as unknown as NextRequest
 
       const response = await postHandler(mockRequest)
       assert.strictEqual(response.status, 200, 'Should return 200 status')
@@ -198,7 +203,7 @@ describe('Google', () => {
             ...(threadId ? { threadId } : {}),
             content,
           }),
-        }) as any
+        }) as unknown as NextRequest
 
         const response = await postHandler(request)
         assert.strictEqual(response.status, 200)
@@ -314,7 +319,7 @@ describe('Google', () => {
           assistantId: assistant.id,
           content: 'What is the account balance for user ID usr_abc123?',
         }),
-      }) as any
+      }) as unknown as NextRequest
 
       const response = await postHandler(mockRequest)
       assert.strictEqual(response.status, 200)

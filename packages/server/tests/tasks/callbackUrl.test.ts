@@ -3,7 +3,9 @@ import assert from 'node:assert/strict'
 import { randomUUID } from 'node:crypto'
 import { scheduleTask } from '../../src/lib/tasks/scheduleTask'
 import type { TaskScheduler } from '../../src/lib/tasks/schedulers/types'
-import type { Task } from '@prisma/client'
+import type { PrismaClient, Task } from '@prisma/client'
+
+type TaskSchedule = PrismaJson.TaskSchedule
 
 // ---- helpers ----
 
@@ -38,16 +40,18 @@ const createMockPrisma = () => {
     data: { qstashMessageId: string }
   }> = []
 
+  type UpdateArgs = { where: { id: string }; data: { qstashMessageId: string } }
+
   return {
     updates,
     prisma: {
       task: {
-        update: async (args: any) => {
+        update: async (args: UpdateArgs) => {
           updates.push(args)
           return args
         },
       },
-    } as any,
+    } as unknown as PrismaClient,
   }
 }
 
@@ -122,7 +126,7 @@ describe('scheduleTask callbackUrl', () => {
       schedule: {
         start: new Date(Date.now() - 60 * 1000).toISOString(),
         duration: 'P10Y',
-      } as any,
+      } as unknown as TaskSchedule,
     })
     const customUrl = 'http://localhost:3000/superinterface/api/tasks/callback'
 
@@ -143,7 +147,7 @@ describe('scheduleTask callbackUrl', () => {
     const task = makeTask({
       schedule: {
         start: new Date(Date.now() + 300 * 1000).toISOString(),
-      } as any,
+      } as unknown as TaskSchedule,
     })
 
     await scheduleTask({
@@ -165,7 +169,7 @@ describe('scheduleTask callbackUrl', () => {
       schedule: {
         start: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
         recurrenceRules: [{ frequency: 'hourly' }],
-      } as any,
+      } as unknown as TaskSchedule,
     })
 
     await scheduleTask({
@@ -202,7 +206,7 @@ describe('scheduleTask callbackUrl', () => {
     const task = makeTask({
       schedule: {
         start: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
-      } as any,
+      } as unknown as TaskSchedule,
     })
 
     await scheduleTask({

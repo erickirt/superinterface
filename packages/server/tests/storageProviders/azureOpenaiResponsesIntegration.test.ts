@@ -12,10 +12,16 @@ import { createTestWorkspace } from '../lib/workspaces/createTestWorkspace'
 import { createTestModelProvider } from '../lib/modelProviders/createTestModelProvider'
 import { createTestApiKey } from '../lib/apiKeys/createTestApiKey'
 import { createTestAssistant } from '../lib/assistants/createTestAssistant'
+import { NextRequest } from 'next/server'
 import { buildPOST } from '@/app/api/messages/buildRoute'
 
+type StreamEvent = {
+  event?: string
+  data?: Record<string, unknown>
+}
+
 describe('Azure OpenAI Responses API Integration Tests', () => {
-  it('should create conversation and send messages using Azure OpenAI Responses API', async (t) => {
+  it('should create conversation and send messages using Azure OpenAI Responses API', async () => {
     // Debug: Check if Azure AI Project Client returns a client with responses API
     const { AIProjectClient } = await import('@azure/ai-projects-v2')
     const { ClientSecretCredential } = await import('@azure/identity')
@@ -34,7 +40,10 @@ describe('Azure OpenAI Responses API Integration Tests', () => {
       'responses' in openaiClient,
     )
     console.log('[DEBUG] OpenAI client type:', openaiClient.constructor.name)
-    console.log('[DEBUG] OpenAI client baseURL:', (openaiClient as any).baseURL)
+    console.log(
+      '[DEBUG] OpenAI client baseURL:',
+      (openaiClient as unknown as { baseURL?: string }).baseURL,
+    )
 
     // Create an agent in Azure first (required for Responses API)
     const azureAgent = await testAzureProject.agents.createVersion(
@@ -89,13 +98,16 @@ describe('Azure OpenAI Responses API Integration Tests', () => {
         content: 'Say "Hello from Azure Responses API" and nothing else.',
       })
 
-      const mockRequest = new Request('http://localhost:3000/api/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      const mockRequest = new NextRequest(
+        'http://localhost:3000/api/messages',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: requestBody,
         },
-        body: requestBody,
-      }) as any
+      )
 
       console.log('Sending message to Azure OpenAI Responses API...')
       const response = await postHandler(mockRequest)
@@ -115,8 +127,8 @@ describe('Azure OpenAI Responses API Integration Tests', () => {
           } catch {
             console.error('Could not parse error as JSON')
           }
-        } catch (e) {
-          console.error('Could not read error response:', e)
+        } catch (readError) {
+          console.error('Could not read error response:', readError)
         }
       }
 
@@ -126,11 +138,10 @@ describe('Azure OpenAI Responses API Integration Tests', () => {
       // Read the stream
       const reader = response.body.getReader()
       const decoder = new TextDecoder()
-      let allEvents: any[] = []
+      const allEvents: StreamEvent[] = []
       let threadId: string | null = null
-      let conversationId: string | null = null
       let messageReceived = false
-      let rawChunks: string[] = []
+      const rawChunks: string[] = []
 
       try {
         while (true) {
@@ -152,34 +163,36 @@ describe('Azure OpenAI Responses API Integration Tests', () => {
 
           // Try parsing as raw JSON (for Responses API adapters)
           try {
-            const event = JSON.parse(chunk)
+            const event = JSON.parse(chunk) as StreamEvent
             allEvents.push(event)
 
             // Log interesting events
             if (event.event === 'thread.created') {
-              threadId = event.data?.id
+              threadId = (event.data?.id as string | undefined) ?? null
               console.log('Thread created:', threadId)
             }
 
-            if (
-              event.event === 'thread.message.delta' &&
-              event.data?.delta?.content?.[0]?.text?.value
-            ) {
-              messageReceived = true
-              console.log(
-                'Received message delta:',
-                event.data.delta.content[0].text.value,
-              )
+            if (event.event === 'thread.message.delta') {
+              const delta = event.data?.delta as
+                | {
+                    content?: Array<{ text?: { value?: string } }>
+                  }
+                | undefined
+              const value = delta?.content?.[0]?.text?.value
+              if (value) {
+                messageReceived = true
+                console.log('Received message delta:', value)
+              }
             }
 
             if (event.event === 'thread.run.completed') {
               console.log('Run completed:', event.data?.id)
             }
-          } catch (e) {
+          } catch {
             // Ignore parse errors for non-JSON chunks
           }
         }
-      } catch (error: any) {
+      } catch (error) {
         console.error('Stream error:', error)
         throw error
       }
@@ -236,7 +249,7 @@ describe('Azure OpenAI Responses API Integration Tests', () => {
     }
   })
 
-  it('should handle multiple messages in same conversation', async (t) => {
+  it('should handle multiple messages in same conversation', async () => {
     const cred = new ClientSecretCredential(
       process.env.TEST_AZURE_TENANT_ID!,
       process.env.TEST_AZURE_CLIENT_ID!,
@@ -291,7 +304,7 @@ describe('Azure OpenAI Responses API Integration Tests', () => {
       let threadId: string | null = null
 
       const sendMessage = async (content: string) => {
-        const request = new Request('http://localhost:3000/api/messages', {
+        const request = new NextRequest('http://localhost:3000/api/messages', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -302,7 +315,7 @@ describe('Azure OpenAI Responses API Integration Tests', () => {
             ...(threadId ? { threadId } : {}), // Include threadId if we have one
             content,
           }),
-        }) as any
+        })
 
         const response = await postHandler(request)
         assert.strictEqual(response.status, 200)
@@ -320,21 +333,26 @@ describe('Azure OpenAI Responses API Integration Tests', () => {
 
           // Parse as raw JSON (for Responses API adapters)
           try {
-            const event = JSON.parse(chunk)
+            const event = JSON.parse(chunk) as StreamEvent
 
             // Capture thread ID from thread.created event
             if (event.event === 'thread.created' && !threadId) {
-              threadId = event.data?.id
+              threadId = (event.data?.id as string | undefined) ?? null
               console.log('Thread created:', threadId)
             }
 
-            if (
-              event.event === 'thread.message.delta' &&
-              event.data?.delta?.content?.[0]?.text?.value
-            ) {
-              messageContent += event.data.delta.content[0].text.value
+            if (event.event === 'thread.message.delta') {
+              const delta = event.data?.delta as
+                | {
+                    content?: Array<{ text?: { value?: string } }>
+                  }
+                | undefined
+              const value = delta?.content?.[0]?.text?.value
+              if (value) {
+                messageContent += value
+              }
             }
-          } catch (e) {
+          } catch {
             // Ignore parse errors for non-JSON chunks
           }
         }
@@ -396,7 +414,7 @@ describe('Azure OpenAI Responses API Integration Tests', () => {
     }
   })
 
-  it('should handle function calling with Azure OpenAI Responses API', async (t) => {
+  it('should handle function calling with Azure OpenAI Responses API', async () => {
     const cred = new ClientSecretCredential(
       process.env.TEST_AZURE_TENANT_ID!,
       process.env.TEST_AZURE_CLIENT_ID!,
@@ -478,13 +496,16 @@ describe('Azure OpenAI Responses API Integration Tests', () => {
         content: "What's the weather in Tokyo?",
       })
 
-      const mockRequest = new Request('http://localhost:3000/api/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      const mockRequest = new NextRequest(
+        'http://localhost:3000/api/messages',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: requestBody,
         },
-        body: requestBody,
-      }) as any
+      )
 
       console.log(
         'Sending message that should trigger function call to Azure OpenAI...',
@@ -509,15 +530,23 @@ describe('Azure OpenAI Responses API Integration Tests', () => {
 
           // Parse as raw JSON (for Responses API adapters)
           try {
-            const event = JSON.parse(chunk)
+            const event = JSON.parse(chunk) as StreamEvent
 
             if (event.event === 'thread.run.requires_action') {
               requiresActionReceived = true
-              const toolCalls =
-                event.data?.required_action?.submit_tool_outputs?.tool_calls
+              const requiredAction = event.data?.required_action as
+                | {
+                    submit_tool_outputs?: {
+                      tool_calls?: Array<{
+                        function?: { name?: string; arguments?: string }
+                      }>
+                    }
+                  }
+                | undefined
+              const toolCalls = requiredAction?.submit_tool_outputs?.tool_calls
               if (toolCalls && toolCalls.length > 0) {
                 functionCallReceived = true
-                functionName = toolCalls[0]?.function?.name
+                functionName = toolCalls[0]?.function?.name ?? ''
                 console.log(
                   'Function call received:',
                   functionName,
@@ -526,11 +555,11 @@ describe('Azure OpenAI Responses API Integration Tests', () => {
                 )
               }
             }
-          } catch (e) {
+          } catch {
             // Ignore parse errors for non-JSON chunks
           }
         }
-      } catch (error: any) {
+      } catch (error) {
         console.error('Stream error:', error)
         throw error
       }
@@ -561,7 +590,7 @@ describe('Azure OpenAI Responses API Integration Tests', () => {
     }
   })
 
-  it('should store and retrieve conversation metadata correctly', async (t) => {
+  it('should store and retrieve conversation metadata correctly', async () => {
     const cred = new ClientSecretCredential(
       process.env.TEST_AZURE_TENANT_ID!,
       process.env.TEST_AZURE_CLIENT_ID!,
@@ -618,13 +647,16 @@ describe('Azure OpenAI Responses API Integration Tests', () => {
         content: 'Say hi',
       })
 
-      const mockRequest = new Request('http://localhost:3000/api/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      const mockRequest = new NextRequest(
+        'http://localhost:3000/api/messages',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: requestBody,
         },
-        body: requestBody,
-      }) as any
+      )
 
       console.log('Sending message to create conversation...')
       const response = await postHandler(mockRequest)
@@ -633,7 +665,6 @@ describe('Azure OpenAI Responses API Integration Tests', () => {
       // Consume stream
       const reader = response.body!.getReader()
       const decoder = new TextDecoder()
-      let conversationId: string | null = null
 
       while (true) {
         const { done, value } = await reader.read()
@@ -645,11 +676,11 @@ describe('Azure OpenAI Responses API Integration Tests', () => {
         for (const line of lines) {
           if (line.startsWith('data: ')) {
             try {
-              const event = JSON.parse(line.slice(6))
+              const event = JSON.parse(line.slice(6)) as StreamEvent
               if (event.event === 'thread.created') {
-                conversationId = event.data?.id
+                console.log('Thread created:', event.data?.id)
               }
-            } catch (e) {
+            } catch {
               // Ignore
             }
           }

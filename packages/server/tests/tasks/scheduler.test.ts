@@ -1,4 +1,4 @@
-import { describe, it, beforeEach, afterEach, mock } from 'node:test'
+import { describe, it, beforeEach, afterEach } from 'node:test'
 import assert from 'node:assert/strict'
 import { randomUUID } from 'node:crypto'
 import { createLocalScheduler } from '../../src/lib/tasks/schedulers/localScheduler'
@@ -28,11 +28,11 @@ const createMockQstashClient = (): TaskScheduler & {
     deleted,
     publishJSON: async (opts: {
       url: string
-      body: unknown
+      body: Record<string, unknown>
       delay: number
     }) => {
       const messageId = randomUUID()
-      scheduled.push({ messageId, ...opts } as any)
+      scheduled.push({ messageId, ...opts })
       return { messageId }
     },
     messages: {
@@ -178,11 +178,11 @@ describe('localScheduler — delivery', () => {
     const receivedBodies: unknown[] = []
 
     const originalFetch = globalThis.fetch
-    // @ts-ignore — mock fetch
-    globalThis.fetch = async (input: any, init: any) => {
-      receivedBodies.push(JSON.parse(init?.body))
+    const mockFetch: typeof fetch = async (_input, init) => {
+      receivedBodies.push(JSON.parse(init?.body as string))
       return new Response('ok', { status: 200 })
     }
+    globalThis.fetch = mockFetch
 
     try {
       const taskId = randomUUID()
@@ -207,11 +207,11 @@ describe('localScheduler — delivery', () => {
     const receivedBodies: unknown[] = []
 
     const originalFetch = globalThis.fetch
-    // @ts-ignore — mock fetch
-    globalThis.fetch = async (_input: any, init: any) => {
-      receivedBodies.push(JSON.parse(init?.body))
+    const mockFetch: typeof fetch = async (_input, init) => {
+      receivedBodies.push(JSON.parse(init?.body as string))
       return new Response('ok', { status: 200 })
     }
+    globalThis.fetch = mockFetch
 
     try {
       const { messageId } = await scheduler.publishJSON({
@@ -236,11 +236,11 @@ describe('localScheduler — delivery', () => {
     let capturedHeaders: Record<string, string> = {}
 
     const originalFetch = globalThis.fetch
-    // @ts-ignore — mock fetch
-    globalThis.fetch = async (_input: any, init: any) => {
-      capturedHeaders = { ...init?.headers }
+    const mockFetch: typeof fetch = async (_input, init) => {
+      capturedHeaders = { ...(init?.headers as Record<string, string>) }
       return new Response('ok', { status: 200 })
     }
+    globalThis.fetch = mockFetch
 
     try {
       await scheduler.publishJSON({
@@ -262,11 +262,11 @@ describe('localScheduler — delivery', () => {
     let capturedUrl = ''
 
     const originalFetch = globalThis.fetch
-    // @ts-ignore — mock fetch
-    globalThis.fetch = async (input: any, _init: any) => {
+    const mockFetch: typeof fetch = async (input) => {
       capturedUrl = input.toString()
       return new Response('ok', { status: 200 })
     }
+    globalThis.fetch = mockFetch
 
     try {
       const url = 'http://localhost:3000/api/tasks/callback'
@@ -288,10 +288,10 @@ describe('localScheduler — delivery', () => {
     const scheduler = createLocalScheduler()
 
     const originalFetch = globalThis.fetch
-    // @ts-ignore — mock fetch
-    globalThis.fetch = async () => {
+    const mockFetch: typeof fetch = async () => {
       throw new Error('Network error')
     }
+    globalThis.fetch = mockFetch
 
     try {
       await scheduler.publishJSON({

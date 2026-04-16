@@ -1,7 +1,17 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert'
-import { StorageProviderType } from '@prisma/client'
+import { Prisma, StorageProviderType } from '@prisma/client'
 import { storageThreadId } from '@/lib/threads/storageThreadId'
+
+type ThreadArg = Prisma.ThreadGetPayload<{
+  include: {
+    assistant: {
+      select: {
+        storageProviderType: true
+      }
+    }
+  }
+}>
 
 describe('storageThreadId', () => {
   it('returns openaiThreadId for OPENAI storage', () => {
@@ -11,7 +21,7 @@ describe('storageThreadId', () => {
       assistant: {
         storageProviderType: StorageProviderType.OPENAI,
       },
-    } as any
+    } as unknown as ThreadArg
 
     assert.strictEqual(storageThreadId({ thread }), 'thread_openai123')
   })
@@ -23,7 +33,7 @@ describe('storageThreadId', () => {
       assistant: {
         storageProviderType: StorageProviderType.AZURE_OPENAI,
       },
-    } as any
+    } as unknown as ThreadArg
 
     assert.strictEqual(storageThreadId({ thread }), 'thread_azure456')
   })
@@ -35,7 +45,7 @@ describe('storageThreadId', () => {
       assistant: {
         storageProviderType: StorageProviderType.AZURE_AGENTS,
       },
-    } as any
+    } as unknown as ThreadArg
 
     assert.strictEqual(storageThreadId({ thread }), 'azure-thread-789')
   })
@@ -47,7 +57,7 @@ describe('storageThreadId', () => {
       assistant: {
         storageProviderType: StorageProviderType.OPENAI_RESPONSES,
       },
-    } as any
+    } as unknown as ThreadArg
 
     assert.strictEqual(storageThreadId({ thread }), 'conv_openai123')
   })
@@ -59,7 +69,7 @@ describe('storageThreadId', () => {
       assistant: {
         storageProviderType: StorageProviderType.AZURE_RESPONSES,
       },
-    } as any
+    } as unknown as ThreadArg
 
     assert.strictEqual(storageThreadId({ thread }), 'conv_azure456')
   })
@@ -70,7 +80,7 @@ describe('storageThreadId', () => {
       assistant: {
         storageProviderType: StorageProviderType.SUPERINTERFACE_CLOUD,
       },
-    } as any
+    } as unknown as ThreadArg
 
     assert.strictEqual(storageThreadId({ thread }), 'local-thread-id')
   })
@@ -79,9 +89,9 @@ describe('storageThreadId', () => {
     const thread = {
       id: 'local-thread-id',
       assistant: {
-        storageProviderType: 'INVALID_TYPE' as any,
+        storageProviderType: 'INVALID_TYPE' as unknown as StorageProviderType,
       },
-    } as any
+    } as unknown as ThreadArg
 
     assert.throws(
       () => storageThreadId({ thread }),

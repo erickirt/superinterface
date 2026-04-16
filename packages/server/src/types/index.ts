@@ -30,7 +30,14 @@ export type McpConnection = {
 }
 
 export type RecurrenceRule = {
-  frequency: 'daily' | 'weekly' | 'monthly' | 'yearly'
+  frequency:
+    | 'secondly'
+    | 'minutely'
+    | 'hourly'
+    | 'daily'
+    | 'weekly'
+    | 'monthly'
+    | 'yearly'
   byDay?: string[]
   byMonth?: number[]
   byHour?: number[]
@@ -89,7 +96,7 @@ declare global {
     type MessageIncompleteDetails =
       OpenAI.Beta.Threads.Messages.Message['incomplete_details']
     type MessageMetadata = OpenAI.Beta.Threads.Messages.Message['metadata']
-    type MessageToolCalls = OpenAI.Beta.Threads.Runs.ToolCall
+    type MessageToolCalls = OpenAI.Beta.Threads.Runs.ToolCall[]
     type MessageAttachment = OpenAI.Beta.Threads.Messages.Message.Attachment
 
     type RunRequiredAction = OpenAI.Beta.Threads.Runs.Run['required_action']

@@ -1,6 +1,7 @@
 import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert'
 import { execSync, spawn, type ChildProcess } from 'node:child_process'
+import type { NextRequest } from 'next/server'
 import {
   ApiKeyType,
   ModelProviderType,
@@ -14,6 +15,22 @@ import { createTestModelProvider } from '../lib/modelProviders/createTestModelPr
 import { createTestApiKey } from '../lib/apiKeys/createTestApiKey'
 import { createTestAssistant } from '../lib/assistants/createTestAssistant'
 import { buildPOST } from '@/app/api/messages/buildRoute'
+
+type StreamEvent = {
+  event: string
+  data?: {
+    id?: string
+    delta?: {
+      content?: Array<{ text?: { value?: string } }>
+    }
+    last_error?: unknown
+    required_action?: {
+      submit_tool_outputs?: {
+        tool_calls?: Array<{ function?: { name?: string } }>
+      }
+    }
+  }
+}
 
 const googleApiKey = process.env.TEST_GOOGLE_API_KEY
 
@@ -99,7 +116,7 @@ async function waitForHealth(): Promise<void> {
 async function warmUp(): Promise<void> {
   const rpc = async (
     method: string,
-    params: Record<string, any> = {},
+    params: Record<string, unknown> = {},
     id = 1,
   ) => {
     const res = await fetch(MCP_SERVER_URL, {
@@ -139,10 +156,10 @@ async function warmUp(): Promise<void> {
 /**
  * Collect all streaming events from a POST /api/messages response.
  */
-async function collectEvents(response: Response) {
+async function collectEvents(response: Response): Promise<StreamEvent[]> {
   const reader = response.body!.getReader()
   const decoder = new TextDecoder()
-  const events: Array<{ event: string; data: any }> = []
+  const events: StreamEvent[] = []
 
   while (true) {
     const { done, value } = await reader.read()
@@ -150,7 +167,7 @@ async function collectEvents(response: Response) {
 
     const chunk = decoder.decode(value, { stream: true })
     try {
-      const event = JSON.parse(chunk)
+      const event = JSON.parse(chunk) as StreamEvent
       events.push(event)
     } catch {
       // Ignore non-JSON chunks
@@ -163,14 +180,12 @@ async function collectEvents(response: Response) {
 /**
  * Extract the final assistant text from collected events.
  */
-function getAssistantText(events: Array<{ event: string; data: any }>): string {
+function getAssistantText(events: StreamEvent[]): string {
   let text = ''
   for (const ev of events) {
-    if (
-      ev.event === 'thread.message.delta' &&
-      ev.data?.delta?.content?.[0]?.text?.value
-    ) {
-      text += ev.data.delta.content[0].text.value
+    const value = ev.data?.delta?.content?.[0]?.text?.value
+    if (ev.event === 'thread.message.delta' && value) {
+      text += value
     }
   }
   return text
@@ -277,7 +292,7 @@ describe('Google Computer Use', () => {
         content:
           'Take a screenshot and tell me what website or page you see on the screen.',
       }),
-    }) as any
+    }) as unknown as NextRequest
 
     const response = await postHandler(mockRequest)
     assert.strictEqual(response.status, 200, 'Should return 200 status')
@@ -339,7 +354,7 @@ describe('Google Computer Use', () => {
         content:
           'Navigate to superinterface.ai, then click on Pricing, and tell me the price of the Pro plan.',
       }),
-    }) as any
+    }) as unknown as NextRequest
 
     const response = await postHandler(mockRequest)
     assert.strictEqual(response.status, 200, 'Should return 200 status')

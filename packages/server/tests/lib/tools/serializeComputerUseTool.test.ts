@@ -1,5 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
+import { ModelProviderType, StorageProviderType } from '@prisma/client'
 import {
   isOpenaiComputerUseModel,
   isOpenaiResponsesComputerUseModel,
@@ -16,8 +17,8 @@ test('isOpenaiResponsesComputerUseModel only enables OpenAI Responses GPT-5.4', 
     isOpenaiResponsesComputerUseModel({
       assistant: {
         modelSlug: 'gpt-5.4',
-        modelProvider: { type: 'OPENAI' as any },
-        storageProviderType: 'OPENAI_RESPONSES' as any,
+        modelProvider: { type: ModelProviderType.OPENAI },
+        storageProviderType: StorageProviderType.OPENAI_RESPONSES,
       },
     }),
     true,
@@ -27,8 +28,8 @@ test('isOpenaiResponsesComputerUseModel only enables OpenAI Responses GPT-5.4', 
     isOpenaiResponsesComputerUseModel({
       assistant: {
         modelSlug: 'gpt-5.4',
-        modelProvider: { type: 'AZURE_OPENAI' as any },
-        storageProviderType: 'AZURE_RESPONSES' as any,
+        modelProvider: { type: ModelProviderType.AZURE_OPENAI },
+        storageProviderType: StorageProviderType.AZURE_RESPONSES,
       },
     }),
     false,

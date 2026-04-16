@@ -194,16 +194,16 @@ export const assistantClientAdapter = ({
   thread?: Thread | null
 }): OpenAI =>
   supercompat({
-    client: clientAdapter({
+    clientAdapter: clientAdapter({
       modelProvider: assistant.modelProvider,
       storageProviderType: assistant.storageProviderType,
     }),
     // @ts-expect-error - storageAdapter can return undefined
-    storage: storageAdapter({
+    storageAdapter: storageAdapter({
       assistant,
       prisma,
     }),
-    // @ts-expect-error - storageAdapter can return undefined
+    // @ts-expect-error - runAdapter can return undefined
     runAdapter: runAdapter({
       assistant,
       thread,

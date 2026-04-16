@@ -4,7 +4,9 @@ import { randomUUID } from 'node:crypto'
 import { scheduleTask } from '../../src/lib/tasks/scheduleTask'
 import { cancelScheduledTask } from '../../src/lib/tasks/cancelScheduledTask'
 import type { TaskScheduler } from '../../src/lib/tasks/schedulers/types'
-import type { Task } from '@prisma/client'
+import type { PrismaClient, Task } from '@prisma/client'
+
+type TaskSchedule = PrismaJson.TaskSchedule
 
 // ---- mock scheduler that records calls ----
 
@@ -41,16 +43,18 @@ const createMockPrisma = () => {
     data: { qstashMessageId: string }
   }> = []
 
+  type UpdateArgs = { where: { id: string }; data: { qstashMessageId: string } }
+
   return {
     updates,
     prisma: {
       task: {
-        update: async (args: any) => {
+        update: async (args: UpdateArgs) => {
           updates.push(args)
           return args
         },
       },
-    } as any,
+    } as unknown as PrismaClient,
   }
 }
 
@@ -116,7 +120,7 @@ describe('scheduleTask with pluggable scheduler', () => {
   })
 
   it('does nothing when schedule is null', async () => {
-    const task = makeTask({ schedule: null as any })
+    const task = makeTask({ schedule: null as unknown as TaskSchedule })
     await scheduleTask({
       task,
       prisma: mockDb.prisma,
@@ -132,7 +136,7 @@ describe('scheduleTask with pluggable scheduler', () => {
     const task = makeTask({
       schedule: {
         start: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
-      } as any,
+      } as unknown as TaskSchedule,
     })
     await scheduleTask({
       task,
@@ -150,7 +154,7 @@ describe('scheduleTask with pluggable scheduler', () => {
       schedule: {
         start: new Date(Date.now() - 60 * 1000).toISOString(),
         duration: 'PT1H',
-      } as any,
+      } as unknown as TaskSchedule,
     })
 
     await scheduleTask({
@@ -183,7 +187,7 @@ describe('scheduleTask with pluggable scheduler', () => {
 
     const futureStart = new Date(Date.now() + 120 * 1000).toISOString() // 2 min in future
     const task = makeTask({
-      schedule: { start: futureStart } as any,
+      schedule: { start: futureStart } as unknown as TaskSchedule,
     })
 
     await scheduleTask({

@@ -345,7 +345,8 @@ describe('handleUpdateTask', () => {
     })
 
     const originalNodeEnv = process.env.NODE_ENV
-    process.env.NODE_ENV = 'production'
+    const env = process.env as { NODE_ENV?: string }
+    env.NODE_ENV = 'production'
 
     try {
       const result = await handleUpdateTask({
@@ -369,7 +370,7 @@ describe('handleUpdateTask', () => {
         newStart,
       )
     } finally {
-      process.env.NODE_ENV = originalNodeEnv
+      env.NODE_ENV = originalNodeEnv
     }
   })
 })

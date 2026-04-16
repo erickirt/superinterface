@@ -1,6 +1,7 @@
 import assert from 'node:assert'
 import { describe, it } from 'node:test'
 import { randomUUID } from 'node:crypto'
+import type { ModelProvider } from '@prisma/client'
 import { ModelProviderType, StorageProviderType } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { createTestWorkspace } from '../lib/workspaces/createTestWorkspace'
@@ -67,10 +68,14 @@ describe('Azure Agents Storage Provider', () => {
         azureClientId: 'client-id',
         azureClientSecret: 'client-secret',
         endpoint: 'https://test.cognitiveservices.azure.com/',
-      } as any
+      } as unknown as ModelProvider
 
       assert.throws(
-        () => buildAzureAiProjectClient({ modelProvider }),
+        () =>
+          buildAzureAiProjectClient({
+            modelProvider,
+            storageProviderType: StorageProviderType.AZURE_AGENTS,
+          }),
         /Azure AI Project credentials missing/,
       )
     })
@@ -82,10 +87,14 @@ describe('Azure Agents Storage Provider', () => {
         azureClientId: null,
         azureClientSecret: 'client-secret',
         endpoint: 'https://test.cognitiveservices.azure.com/',
-      } as any
+      } as unknown as ModelProvider
 
       assert.throws(
-        () => buildAzureAiProjectClient({ modelProvider }),
+        () =>
+          buildAzureAiProjectClient({
+            modelProvider,
+            storageProviderType: StorageProviderType.AZURE_AGENTS,
+          }),
         /Azure AI Project credentials missing/,
       )
     })
@@ -97,10 +106,14 @@ describe('Azure Agents Storage Provider', () => {
         azureClientId: 'client-id',
         azureClientSecret: null,
         endpoint: 'https://test.cognitiveservices.azure.com/',
-      } as any
+      } as unknown as ModelProvider
 
       assert.throws(
-        () => buildAzureAiProjectClient({ modelProvider }),
+        () =>
+          buildAzureAiProjectClient({
+            modelProvider,
+            storageProviderType: StorageProviderType.AZURE_AGENTS,
+          }),
         /Azure AI Project credentials missing/,
       )
     })
@@ -112,10 +125,14 @@ describe('Azure Agents Storage Provider', () => {
         azureClientId: 'client-id',
         azureClientSecret: 'client-secret',
         endpoint: null,
-      } as any
+      } as unknown as ModelProvider
 
       assert.throws(
-        () => buildAzureAiProjectClient({ modelProvider }),
+        () =>
+          buildAzureAiProjectClient({
+            modelProvider,
+            storageProviderType: StorageProviderType.AZURE_AGENTS,
+          }),
         /Azure AI Project credentials missing/,
       )
     })
@@ -127,9 +144,12 @@ describe('Azure Agents Storage Provider', () => {
         azureClientId: 'client-id',
         azureClientSecret: 'client-secret',
         endpoint: 'https://test.cognitiveservices.azure.com/',
-      } as any
+      } as unknown as ModelProvider
 
-      const client = buildAzureAiProjectClient({ modelProvider })
+      const client = buildAzureAiProjectClient({
+        modelProvider,
+        storageProviderType: StorageProviderType.AZURE_AGENTS,
+      })
       assert.ok(client)
     })
   })
@@ -142,10 +162,16 @@ describe('Azure Agents Storage Provider', () => {
         azureClientId: 'client-id',
         azureClientSecret: 'client-secret',
         endpoint: 'https://test.cognitiveservices.azure.com/',
-      } as any
+      } as unknown as ModelProvider
 
-      const client1 = getAzureAiProjectClient({ modelProvider })
-      const client2 = getAzureAiProjectClient({ modelProvider })
+      const client1 = getAzureAiProjectClient({
+        modelProvider,
+        storageProviderType: StorageProviderType.AZURE_AGENTS,
+      })
+      const client2 = getAzureAiProjectClient({
+        modelProvider,
+        storageProviderType: StorageProviderType.AZURE_AGENTS,
+      })
 
       assert.strictEqual(
         client1,
@@ -161,7 +187,7 @@ describe('Azure Agents Storage Provider', () => {
         azureClientId: 'client-id-1',
         azureClientSecret: 'client-secret-1',
         endpoint: 'https://test1.cognitiveservices.azure.com/',
-      } as any
+      } as unknown as ModelProvider
 
       const modelProvider2 = {
         id: randomUUID(),
@@ -169,10 +195,16 @@ describe('Azure Agents Storage Provider', () => {
         azureClientId: 'client-id-2',
         azureClientSecret: 'client-secret-2',
         endpoint: 'https://test2.cognitiveservices.azure.com/',
-      } as any
+      } as unknown as ModelProvider
 
-      const client1 = getAzureAiProjectClient({ modelProvider: modelProvider1 })
-      const client2 = getAzureAiProjectClient({ modelProvider: modelProvider2 })
+      const client1 = getAzureAiProjectClient({
+        modelProvider: modelProvider1,
+        storageProviderType: StorageProviderType.AZURE_AGENTS,
+      })
+      const client2 = getAzureAiProjectClient({
+        modelProvider: modelProvider2,
+        storageProviderType: StorageProviderType.AZURE_AGENTS,
+      })
 
       assert.notStrictEqual(
         client1,
@@ -191,7 +223,7 @@ describe('Azure Agents Storage Provider', () => {
         azureClientId: 'client-id',
         azureClientSecret: 'client-secret',
         endpoint: 'https://test.cognitiveservices.azure.com/',
-      } as any
+      } as unknown as ModelProvider
 
       const adapter = clientAdapter({
         modelProvider,
@@ -199,6 +231,7 @@ describe('Azure Agents Storage Provider', () => {
       })
 
       assert.ok(adapter)
+      assert.ok('type' in adapter)
       assert.strictEqual(adapter.type, 'AZURE_AI_PROJECT')
     })
 
@@ -220,6 +253,7 @@ describe('Azure Agents Storage Provider', () => {
       })
 
       assert.ok(adapter)
+      assert.ok('type' in adapter)
       assert.strictEqual(adapter.type, 'AZURE_OPENAI')
     })
   })
@@ -455,8 +489,9 @@ describe('Azure Agents Storage Provider', () => {
 
   describe('Azure Agents with model provider configs', () => {
     it('Azure OpenAI model provider does NOT support Azure Agents storage', async () => {
-      const { modelProviderConfigs } =
-        await import('@/lib/modelProviders/modelProviderConfigs')
+      const { modelProviderConfigs } = await import(
+        '@/lib/modelProviders/modelProviderConfigs'
+      )
 
       const azureOpenaiConfig = modelProviderConfigs.find(
         (config) => config.type === ModelProviderType.AZURE_OPENAI,
@@ -472,8 +507,9 @@ describe('Azure Agents Storage Provider', () => {
     })
 
     it('Azure AI Project model provider config exists and only supports AZURE_AGENTS storage', async () => {
-      const { modelProviderConfigs } =
-        await import('@/lib/modelProviders/modelProviderConfigs')
+      const { modelProviderConfigs } = await import(
+        '@/lib/modelProviders/modelProviderConfigs'
+      )
 
       const azureAiProjectConfig = modelProviderConfigs.find(
         (config) => config.type === ModelProviderType.AZURE_AI_PROJECT,
@@ -508,7 +544,7 @@ describe('Azure Agents Storage Provider', () => {
         azureClientId: 'client-id',
         azureClientSecret: 'client-secret',
         endpoint: 'https://test.cognitiveservices.azure.com/',
-      } as any
+      } as unknown as ModelProvider
 
       const adapter = clientAdapter({
         modelProvider,
@@ -516,6 +552,7 @@ describe('Azure Agents Storage Provider', () => {
       })
 
       assert.ok(adapter)
+      assert.ok('type' in adapter)
       assert.strictEqual(
         adapter.type,
         'AZURE_AI_PROJECT',
@@ -541,6 +578,7 @@ describe('Azure Agents Storage Provider', () => {
       })
 
       assert.ok(adapter)
+      assert.ok('type' in adapter)
       assert.strictEqual(
         adapter.type,
         'AZURE_OPENAI',
@@ -566,6 +604,7 @@ describe('Azure Agents Storage Provider', () => {
       })
 
       assert.ok(adapter)
+      assert.ok('type' in adapter)
       assert.strictEqual(
         adapter.type,
         'AZURE_OPENAI',
@@ -585,7 +624,10 @@ describe('Azure Agents Storage Provider', () => {
         },
       })
 
-      const adapter = clientAdapter({ modelProvider })
+      const adapter = clientAdapter({
+        modelProvider,
+        storageProviderType: StorageProviderType.SUPERINTERFACE_CLOUD,
+      })
       assert.ok(adapter, 'OPENAI adapter should be created')
       assert.ok(adapter.client, 'OPENAI adapter should have client')
     })
@@ -600,7 +642,10 @@ describe('Azure Agents Storage Provider', () => {
         },
       })
 
-      const adapter = clientAdapter({ modelProvider })
+      const adapter = clientAdapter({
+        modelProvider,
+        storageProviderType: StorageProviderType.SUPERINTERFACE_CLOUD,
+      })
       assert.ok(adapter, 'ANTHROPIC adapter should be created')
       assert.ok(adapter.client, 'ANTHROPIC adapter should have client')
     })
@@ -615,7 +660,10 @@ describe('Azure Agents Storage Provider', () => {
         },
       })
 
-      const adapter = clientAdapter({ modelProvider })
+      const adapter = clientAdapter({
+        modelProvider,
+        storageProviderType: StorageProviderType.SUPERINTERFACE_CLOUD,
+      })
       assert.ok(adapter, 'MISTRAL adapter should be created')
       assert.ok(adapter.client, 'MISTRAL adapter should have client')
     })
@@ -630,7 +678,10 @@ describe('Azure Agents Storage Provider', () => {
         },
       })
 
-      const adapter = clientAdapter({ modelProvider })
+      const adapter = clientAdapter({
+        modelProvider,
+        storageProviderType: StorageProviderType.SUPERINTERFACE_CLOUD,
+      })
       assert.ok(adapter, 'GROQ adapter should be created')
       assert.ok(adapter.client, 'GROQ adapter should have client')
     })
@@ -645,7 +696,10 @@ describe('Azure Agents Storage Provider', () => {
         },
       })
 
-      const adapter = clientAdapter({ modelProvider })
+      const adapter = clientAdapter({
+        modelProvider,
+        storageProviderType: StorageProviderType.SUPERINTERFACE_CLOUD,
+      })
       assert.ok(adapter, 'PERPLEXITY adapter should be created')
       assert.ok(adapter.client, 'PERPLEXITY adapter should have client')
     })
@@ -660,7 +714,10 @@ describe('Azure Agents Storage Provider', () => {
         },
       })
 
-      const adapter = clientAdapter({ modelProvider })
+      const adapter = clientAdapter({
+        modelProvider,
+        storageProviderType: StorageProviderType.SUPERINTERFACE_CLOUD,
+      })
       assert.ok(adapter, 'TOGETHER adapter should be created')
       assert.ok(adapter.client, 'TOGETHER adapter should have client')
     })
@@ -675,7 +732,10 @@ describe('Azure Agents Storage Provider', () => {
         },
       })
 
-      const adapter = clientAdapter({ modelProvider })
+      const adapter = clientAdapter({
+        modelProvider,
+        storageProviderType: StorageProviderType.SUPERINTERFACE_CLOUD,
+      })
       assert.ok(adapter, 'OLLAMA adapter should be created')
       assert.ok(adapter.client, 'OLLAMA adapter should have client')
     })
@@ -690,7 +750,10 @@ describe('Azure Agents Storage Provider', () => {
         },
       })
 
-      const adapter = clientAdapter({ modelProvider })
+      const adapter = clientAdapter({
+        modelProvider,
+        storageProviderType: StorageProviderType.SUPERINTERFACE_CLOUD,
+      })
       assert.ok(adapter, 'HUMIRIS adapter should be created')
       assert.ok(adapter.client, 'HUMIRIS adapter should have client')
     })
@@ -705,7 +768,10 @@ describe('Azure Agents Storage Provider', () => {
         },
       })
 
-      const adapter = clientAdapter({ modelProvider })
+      const adapter = clientAdapter({
+        modelProvider,
+        storageProviderType: StorageProviderType.SUPERINTERFACE_CLOUD,
+      })
       assert.ok(adapter, 'GOOGLE adapter should be created')
       assert.ok(adapter.client, 'GOOGLE adapter should have client')
     })
@@ -720,7 +786,10 @@ describe('Azure Agents Storage Provider', () => {
         },
       })
 
-      const adapter = clientAdapter({ modelProvider })
+      const adapter = clientAdapter({
+        modelProvider,
+        storageProviderType: StorageProviderType.SUPERINTERFACE_CLOUD,
+      })
       assert.ok(adapter, 'OPEN_ROUTER adapter should be created')
       assert.ok(adapter.client, 'OPEN_ROUTER adapter should have client')
     })

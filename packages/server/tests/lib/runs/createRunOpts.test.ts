@@ -1,8 +1,11 @@
 import { test } from 'node:test'
 import { strict as assert } from 'node:assert'
 import { StorageProviderType, TruncationType } from '@prisma/client'
-import type { Assistant, Thread } from '@prisma/client'
+import type { PrismaClient, Thread } from '@prisma/client'
 import { createRunOpts } from '../../../src/lib/runs/createRunOpts'
+
+type CreateRunOptsArgs = Parameters<typeof createRunOpts>[0]
+type MockAssistant = CreateRunOptsArgs['assistant']
 
 test('Azure Responses: verify instructions are not sent when empty', async () => {
   console.log(
@@ -27,13 +30,13 @@ test('Azure Responses: verify instructions are not sent when empty', async () =>
       endpoint: 'https://test.openai.azure.com',
     },
     mcpServers: [],
-  } as any
+  } as unknown as MockAssistant
 
   const mockThread = {
     id: 'test-thread',
   } as Thread
 
-  const mockPrisma = {} as any
+  const mockPrisma = {} as unknown as PrismaClient
 
   const runOpts = await createRunOpts({
     assistant: mockAssistant,
@@ -76,13 +79,13 @@ test('Azure Responses: verify instructions are not sent when agent is provided',
       endpoint: 'https://test.openai.azure.com',
     },
     mcpServers: [],
-  } as any
+  } as unknown as MockAssistant
 
   const mockThread = {
     id: 'test-thread',
   } as Thread
 
-  const mockPrisma = {} as any
+  const mockPrisma = {} as unknown as PrismaClient
 
   const runOpts = await createRunOpts({
     assistant: mockAssistant,
@@ -124,13 +127,13 @@ test('OpenAI: verify instructions are not sent when empty', async () => {
       apiKey: 'test-key',
     },
     mcpServers: [],
-  } as any
+  } as unknown as MockAssistant
 
   const mockThread = {
     id: 'test-thread',
   } as Thread
 
-  const mockPrisma = {} as any
+  const mockPrisma = {} as unknown as PrismaClient
 
   const runOpts = await createRunOpts({
     assistant: mockAssistant,
@@ -173,13 +176,13 @@ test('Azure OpenAI: verify instructions are not sent when empty', async () => {
       endpoint: 'https://test.openai.azure.com',
     },
     mcpServers: [],
-  } as any
+  } as unknown as MockAssistant
 
   const mockThread = {
     id: 'test-thread',
   } as Thread
 
-  const mockPrisma = {} as any
+  const mockPrisma = {} as unknown as PrismaClient
 
   const runOpts = await createRunOpts({
     assistant: mockAssistant,
@@ -220,13 +223,13 @@ test('Azure Agents: verify instructions are not sent when empty', async () => {
       endpoint: 'https://test.openai.azure.com',
     },
     mcpServers: [],
-  } as any
+  } as unknown as MockAssistant
 
   const mockThread = {
     id: 'test-thread',
   } as Thread
 
-  const mockPrisma = {} as any
+  const mockPrisma = {} as unknown as PrismaClient
 
   const runOpts = await createRunOpts({
     assistant: mockAssistant,
@@ -266,13 +269,13 @@ test('OpenAI Responses: verify instructions are always sent', async () => {
       apiKey: 'test-key',
     },
     mcpServers: [],
-  } as any
+  } as unknown as MockAssistant
 
   const mockThread = {
     id: 'test-thread',
   } as Thread
 
-  const mockPrisma = {} as any
+  const mockPrisma = {} as unknown as PrismaClient
 
   const runOpts = await createRunOpts({
     assistant: mockAssistant,
@@ -316,13 +319,13 @@ test('SUPERINTERFACE_CLOUD: verify instructions are always sent', async () => {
       apiKey: 'test-key',
     },
     mcpServers: [],
-  } as any
+  } as unknown as MockAssistant
 
   const mockThread = {
     id: 'test-thread',
   } as Thread
 
-  const mockPrisma = {} as any
+  const mockPrisma = {} as unknown as PrismaClient
 
   const runOpts = await createRunOpts({
     assistant: mockAssistant,
@@ -364,7 +367,7 @@ test('All storage providers: verify instructions are sent when provided', async 
     id: 'test-thread',
   } as Thread
 
-  const mockPrisma = {} as any
+  const mockPrisma = {} as unknown as PrismaClient
 
   for (const storageProviderType of storageProviderTypes) {
     const isAzureResponses =
@@ -395,7 +398,7 @@ test('All storage providers: verify instructions are sent when provided', async 
         apiKey: 'test-key',
       },
       mcpServers: [],
-    } as any
+    } as unknown as MockAssistant
 
     const runOpts = await createRunOpts({
       assistant: mockAssistant,

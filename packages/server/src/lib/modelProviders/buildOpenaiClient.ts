@@ -8,7 +8,7 @@ export const buildOpenaiClient = ({
   modelProvider: ModelProvider
 }) =>
   supercompat({
-    client: clientAdapter({
+    clientAdapter: clientAdapter({
       modelProvider,
       storageProviderType: StorageProviderType.SUPERINTERFACE_CLOUD,
     }),

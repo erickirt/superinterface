@@ -440,9 +440,9 @@ describe('/api/assistants/[assistantId]/mcp-servers', () => {
       prisma,
     })
 
-    const mcpTools = result.tools.filter(
-      (tool): tool is NativeMcpTool => tool.type === 'mcp',
-    )
+    const mcpTools = (result.tools ?? [])
+      .map((tool) => tool as unknown as NativeMcpTool)
+      .filter((tool) => tool.type === 'mcp')
 
     assert.ok(
       mcpTools.some(
@@ -457,6 +457,6 @@ describe('/api/assistants/[assistantId]/mcp-servers', () => {
     )
 
     assert.ok(defaultTool)
-    assert.strictEqual(defaultTool!.mcp.server_description, undefined)
+    assert.strictEqual(defaultTool.mcp.server_description, undefined)
   })
 })

@@ -12,6 +12,7 @@ import { createTestWorkspace } from '../lib/workspaces/createTestWorkspace'
 import { createTestModelProvider } from '../lib/modelProviders/createTestModelProvider'
 import { createTestApiKey } from '../lib/apiKeys/createTestApiKey'
 import { createTestAssistant } from '../lib/assistants/createTestAssistant'
+import { NextRequest } from 'next/server'
 import { buildPOST } from '@/app/api/messages/buildRoute'
 
 const buildAzureAiProjectClient = () => {
@@ -37,7 +38,7 @@ const buildAzureAiProjectClient = () => {
 }
 
 describe('Azure Agents Integration Tests', () => {
-  it('should handle FILE_SEARCH tool with empty vector store without crashing', async (t) => {
+  it('should handle FILE_SEARCH tool with empty vector store without crashing', async () => {
     const azureClient = buildAzureAiProjectClient()
 
     // Create a vector store with NO files (this triggers the bug)
@@ -102,7 +103,7 @@ describe('Azure Agents Integration Tests', () => {
             'What is the secret code in the file? Reply with just the code.',
         })
 
-        const mockRequest = new Request(
+        const mockRequest = new NextRequest(
           'http://localhost:3000/api/cloud/messages',
           {
             method: 'POST',
@@ -111,7 +112,7 @@ describe('Azure Agents Integration Tests', () => {
             },
             body: requestBody,
           },
-        ) as any
+        )
 
         // Call the handler
         console.log(
@@ -130,10 +131,10 @@ describe('Azure Agents Integration Tests', () => {
         // Read the stream
         const reader = response.body.getReader()
         const decoder = new TextDecoder()
-        let allEvents: any[] = []
+        const allEvents: Record<string, unknown>[] = []
         let errorOccurred = false
         let errorMessage = ''
-        let rawChunks: string[] = []
+        const rawChunks: string[] = []
 
         try {
           while (true) {
@@ -151,36 +152,45 @@ describe('Azure Agents Integration Tests', () => {
             for (const line of lines) {
               if (line.startsWith('data: ')) {
                 try {
-                  const event = JSON.parse(line.slice(6))
+                  const event = JSON.parse(line.slice(6)) as Record<
+                    string,
+                    unknown
+                  >
                   allEvents.push(event)
-                  console.log('Parsed event:', event.event)
+                  const eventName =
+                    typeof event.event === 'string' ? event.event : undefined
+                  console.log('Parsed event:', eventName)
 
                   // Log step events to see what's happening
-                  if (event.event?.startsWith('thread.run.step')) {
+                  if (eventName?.startsWith('thread.run.step')) {
+                    const data = event.data as
+                      | { step_details?: unknown }
+                      | undefined
                     console.log(
                       'Step event:',
-                      event.event,
+                      eventName,
                       'step_details:',
-                      event.data?.step_details,
+                      data?.step_details,
                     )
                   }
-                } catch (e) {
+                } catch {
                   // Ignore parse errors for non-JSON lines
                   console.log('Failed to parse line:', line.substring(0, 100))
                 }
               }
             }
           }
-        } catch (error: any) {
+        } catch (error) {
           errorOccurred = true
-          errorMessage = error.message
+          const err = error as Error
+          errorMessage = err.message
           console.error('Stream error:', error)
-          console.error('Error stack:', error.stack)
+          console.error('Error stack:', err.stack)
 
           // This is the error we're trying to fix:
           // "Cannot read properties of undefined (reading 'type')"
           if (
-            error.message.includes(
+            err.message.includes(
               "Cannot read properties of undefined (reading 'type')",
             )
           ) {

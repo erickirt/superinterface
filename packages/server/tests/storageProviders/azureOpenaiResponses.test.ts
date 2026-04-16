@@ -89,6 +89,7 @@ describe('Azure OpenAI Responses Storage Provider', () => {
       })
 
       assert.ok(adapter)
+      assert.ok('type' in adapter)
       assert.strictEqual(adapter.type, 'AZURE_OPENAI')
     })
 
@@ -115,6 +116,8 @@ describe('Azure OpenAI Responses Storage Provider', () => {
         storageProviderType: StorageProviderType.AZURE_RESPONSES,
       })
 
+      assert.ok('type' in assistantsAdapter)
+      assert.ok('type' in responsesAdapter)
       assert.strictEqual(
         assistantsAdapter.type,
         responsesAdapter.type,
@@ -335,8 +338,9 @@ describe('Azure OpenAI Responses Storage Provider', () => {
 
   describe('Azure OpenAI Responses with model provider configs', () => {
     it('Azure OpenAI model provider config supports AZURE_RESPONSES storage', async () => {
-      const { modelProviderConfigs } =
-        await import('@/lib/modelProviders/modelProviderConfigs')
+      const { modelProviderConfigs } = await import(
+        '@/lib/modelProviders/modelProviderConfigs'
+      )
 
       const azureOpenaiConfig = modelProviderConfigs.find(
         (config) => config.type === ModelProviderType.AZURE_OPENAI,
@@ -352,8 +356,9 @@ describe('Azure OpenAI Responses Storage Provider', () => {
     })
 
     it('Azure OpenAI model provider supports all expected storage types', async () => {
-      const { modelProviderConfigs } =
-        await import('@/lib/modelProviders/modelProviderConfigs')
+      const { modelProviderConfigs } = await import(
+        '@/lib/modelProviders/modelProviderConfigs'
+      )
 
       const azureOpenaiConfig = modelProviderConfigs.find(
         (config) => config.type === ModelProviderType.AZURE_OPENAI,
@@ -376,8 +381,9 @@ describe('Azure OpenAI Responses Storage Provider', () => {
     })
 
     it('Azure OpenAI model provider does NOT support Azure Agents storage', async () => {
-      const { modelProviderConfigs } =
-        await import('@/lib/modelProviders/modelProviderConfigs')
+      const { modelProviderConfigs } = await import(
+        '@/lib/modelProviders/modelProviderConfigs'
+      )
 
       const azureOpenaiConfig = modelProviderConfigs.find(
         (config) => config.type === ModelProviderType.AZURE_OPENAI,

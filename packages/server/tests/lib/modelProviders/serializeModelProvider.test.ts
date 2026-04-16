@@ -41,6 +41,10 @@ describe('serializeModelProvider', () => {
 
     const serialized = serializeModelProvider({ provider })
 
+    assert.ok(
+      'azureTenantId' in serialized,
+      'expected Azure AI Project serialization',
+    )
     assert.strictEqual(serialized.azureTenantId, provider.azureTenantId)
     assert.strictEqual(serialized.azureClientId, provider.azureClientId)
     assert.strictEqual(serialized.azureClientSecret, provider.azureClientSecret)

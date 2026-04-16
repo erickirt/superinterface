@@ -12,10 +12,16 @@ import { createTestWorkspace } from '../lib/workspaces/createTestWorkspace'
 import { createTestModelProvider } from '../lib/modelProviders/createTestModelProvider'
 import { createTestApiKey } from '../lib/apiKeys/createTestApiKey'
 import { createTestAssistant } from '../lib/assistants/createTestAssistant'
+import { NextRequest } from 'next/server'
 import { buildPOST } from '@/app/api/messages/buildRoute'
 
+type StreamEvent = {
+  event?: string
+  data?: Record<string, unknown>
+}
+
 describe('Azure Responses API Instructions Integration Tests', () => {
-  it('should use agent stored instructions when agent is specified', async (t) => {
+  it('should use agent stored instructions when agent is specified', async () => {
     console.log(
       'Testing Azure Responses with agent instructions (custom instructions ignored)...',
     )
@@ -87,13 +93,16 @@ describe('Azure Responses API Instructions Integration Tests', () => {
         content: 'Hello, how are you?',
       })
 
-      const mockRequest = new Request('http://localhost:3000/api/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      const mockRequest = new NextRequest(
+        'http://localhost:3000/api/messages',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: requestBody,
         },
-        body: requestBody,
-      }) as any
+      )
 
       console.log('Sending message to Azure OpenAI Responses API...')
       const response = await postHandler(mockRequest)
@@ -115,24 +124,29 @@ describe('Azure Responses API Instructions Integration Tests', () => {
           const chunk = decoder.decode(value, { stream: true })
 
           try {
-            const event = JSON.parse(chunk)
+            const event = JSON.parse(chunk) as StreamEvent
 
-            if (
-              event.event === 'thread.message.delta' &&
-              event.data?.delta?.content?.[0]?.text?.value
-            ) {
-              messageContent += event.data.delta.content[0].text.value
-              foundMessage = true
+            if (event.event === 'thread.message.delta') {
+              const delta = event.data?.delta as
+                | {
+                    content?: Array<{ text?: { value?: string } }>
+                  }
+                | undefined
+              const value = delta?.content?.[0]?.text?.value
+              if (value) {
+                messageContent += value
+                foundMessage = true
+              }
             }
 
             if (event.event === 'thread.message.completed') {
               console.log('Final message content:', messageContent)
             }
-          } catch (e) {
+          } catch {
             // Ignore parse errors
           }
         }
-      } catch (error: any) {
+      } catch (error) {
         console.error('Stream error:', error)
         throw error
       }
@@ -164,7 +178,7 @@ describe('Azure Responses API Instructions Integration Tests', () => {
     }
   })
 
-  it('should use agent stored instructions when assistant instructions are empty', async (t) => {
+  it('should use agent stored instructions when assistant instructions are empty', async () => {
     console.log(
       'Testing Azure Responses with empty instructions (using agent instructions)...',
     )
@@ -235,13 +249,16 @@ describe('Azure Responses API Instructions Integration Tests', () => {
         content: 'How are you feeling?',
       })
 
-      const mockRequest = new Request('http://localhost:3000/api/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      const mockRequest = new NextRequest(
+        'http://localhost:3000/api/messages',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: requestBody,
         },
-        body: requestBody,
-      }) as any
+      )
 
       console.log('Sending message to Azure OpenAI Responses API...')
       const response = await postHandler(mockRequest)
@@ -263,24 +280,29 @@ describe('Azure Responses API Instructions Integration Tests', () => {
           const chunk = decoder.decode(value, { stream: true })
 
           try {
-            const event = JSON.parse(chunk)
+            const event = JSON.parse(chunk) as StreamEvent
 
-            if (
-              event.event === 'thread.message.delta' &&
-              event.data?.delta?.content?.[0]?.text?.value
-            ) {
-              messageContent += event.data.delta.content[0].text.value
-              foundMessage = true
+            if (event.event === 'thread.message.delta') {
+              const delta = event.data?.delta as
+                | {
+                    content?: Array<{ text?: { value?: string } }>
+                  }
+                | undefined
+              const value = delta?.content?.[0]?.text?.value
+              if (value) {
+                messageContent += value
+                foundMessage = true
+              }
             }
 
             if (event.event === 'thread.message.completed') {
               console.log('Final message content:', messageContent)
             }
-          } catch (e) {
+          } catch {
             // Ignore parse errors
           }
         }
-      } catch (error: any) {
+      } catch (error) {
         console.error('Stream error:', error)
         throw error
       }
@@ -315,7 +337,7 @@ describe('Azure Responses API Instructions Integration Tests', () => {
     }
   })
 
-  it('should verify instructions field is not sent when empty', async (t) => {
+  it('should verify instructions field is not sent when empty', async () => {
     console.log(
       'Testing that instructions field is omitted when empty (unit-style integration test)...',
     )
@@ -425,7 +447,7 @@ describe('Azure Responses API Instructions Integration Tests', () => {
     }
   })
 
-  it('should verify instructions field is omitted when agent reference is provided', async (t) => {
+  it('should verify instructions field is omitted when agent reference is provided', async () => {
     console.log(
       'Testing that instructions field is omitted when agent reference is provided...',
     )

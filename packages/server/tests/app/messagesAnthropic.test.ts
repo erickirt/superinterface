@@ -2,6 +2,7 @@ import { testApiHandler } from 'next-test-api-route-handler'
 import assert from 'node:assert'
 import { TextDecoder } from 'node:util'
 import { describe, it } from 'node:test'
+import type OpenAI from 'openai'
 import {
   ApiKeyType,
   HandlerType,
@@ -109,7 +110,8 @@ describe('/api/messages anthropic tool calls', () => {
 
         const reader = response.body!.getReader()
         const decoder = new TextDecoder()
-        let requiresActionEvent: any | null = null
+        let requiresActionEvent: OpenAI.Beta.AssistantStreamEvent.ThreadRunRequiresAction | null =
+          null
         let threadId: string | null = null
 
         let buffer = ''
@@ -199,8 +201,10 @@ describe('/api/messages anthropic tool calls', () => {
         assert.ok(threadId, 'thread id not emitted')
         assert.ok(requiresActionEvent, 'requires_action event not emitted')
 
+        const capturedRequiresActionEvent: OpenAI.Beta.AssistantStreamEvent.ThreadRunRequiresAction =
+          requiresActionEvent
         const streamingToolCall =
-          requiresActionEvent.data.required_action?.submit_tool_outputs
+          capturedRequiresActionEvent.data.required_action?.submit_tool_outputs
             ?.tool_calls?.[0]
 
         assert.ok(streamingToolCall, 'tool call missing from stream event')
@@ -220,14 +224,15 @@ describe('/api/messages anthropic tool calls', () => {
 
         const toolCallMessage = assistantMessages.find(
           (message) =>
-            Array.isArray(message.toolCalls) &&
-            (message.toolCalls as any[]).length > 0,
+            Array.isArray(message.toolCalls) && message.toolCalls.length > 0,
         )
 
         assert.ok(toolCallMessage, 'no assistant message stored tool call')
+        assert.ok(Array.isArray(toolCallMessage.toolCalls))
 
-        const storedToolCall = (toolCallMessage!.toolCalls as any[])[0]
-        assert.strictEqual(storedToolCall.function?.arguments, '{}')
+        const storedToolCall = toolCallMessage.toolCalls[0]
+        assert.ok(storedToolCall.type === 'function')
+        assert.strictEqual(storedToolCall.function.arguments, '{}')
 
         const failureLogs = await prisma.log.findMany({
           where: {

@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert'
-import { StorageProviderType } from '@prisma/client'
+import { Assistant, StorageProviderType } from '@prisma/client'
 import { storageAssistantId } from '@/lib/assistants/storageAssistantId'
 
 describe('storageAssistantId', () => {
@@ -9,7 +9,7 @@ describe('storageAssistantId', () => {
       id: 'local-assistant-id',
       openaiAssistantId: 'asst_openai123',
       storageProviderType: StorageProviderType.OPENAI,
-    } as any
+    } as unknown as Assistant
 
     assert.strictEqual(storageAssistantId({ assistant }), 'asst_openai123')
   })
@@ -19,7 +19,7 @@ describe('storageAssistantId', () => {
       id: 'local-assistant-id',
       openaiAssistantId: 'asst_azure456',
       storageProviderType: StorageProviderType.AZURE_OPENAI,
-    } as any
+    } as unknown as Assistant
 
     assert.strictEqual(storageAssistantId({ assistant }), 'asst_azure456')
   })
@@ -29,7 +29,7 @@ describe('storageAssistantId', () => {
       id: 'local-assistant-id',
       azureAgentsAgentId: 'agent_789',
       storageProviderType: StorageProviderType.AZURE_AGENTS,
-    } as any
+    } as unknown as Assistant
 
     assert.strictEqual(storageAssistantId({ assistant }), 'agent_789')
   })
@@ -38,7 +38,7 @@ describe('storageAssistantId', () => {
     const assistant = {
       id: 'local-assistant-id',
       storageProviderType: StorageProviderType.OPENAI_RESPONSES,
-    } as any
+    } as unknown as Assistant
 
     assert.strictEqual(storageAssistantId({ assistant }), 'local-assistant-id')
   })
@@ -47,7 +47,7 @@ describe('storageAssistantId', () => {
     const assistant = {
       id: 'local-assistant-id',
       storageProviderType: StorageProviderType.AZURE_RESPONSES,
-    } as any
+    } as unknown as Assistant
 
     assert.strictEqual(storageAssistantId({ assistant }), 'local-assistant-id')
   })
@@ -57,7 +57,7 @@ describe('storageAssistantId', () => {
       id: 'local-assistant-id',
       storageProviderType: StorageProviderType.AZURE_RESPONSES,
       azureResponsesAgentName: 'agent_name_123',
-    } as any
+    } as unknown as Assistant
 
     assert.strictEqual(storageAssistantId({ assistant }), 'agent_name_123')
   })
@@ -66,7 +66,7 @@ describe('storageAssistantId', () => {
     const assistant = {
       id: 'local-assistant-id',
       storageProviderType: StorageProviderType.SUPERINTERFACE_CLOUD,
-    } as any
+    } as unknown as Assistant
 
     assert.strictEqual(storageAssistantId({ assistant }), 'local-assistant-id')
   })
@@ -74,8 +74,8 @@ describe('storageAssistantId', () => {
   it('throws error for invalid storage type', () => {
     const assistant = {
       id: 'local-assistant-id',
-      storageProviderType: 'INVALID_TYPE' as any,
-    } as any
+      storageProviderType: 'INVALID_TYPE' as unknown as StorageProviderType,
+    } as unknown as Assistant
 
     assert.throws(
       () => storageAssistantId({ assistant }),
