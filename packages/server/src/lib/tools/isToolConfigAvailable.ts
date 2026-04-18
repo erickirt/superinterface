@@ -101,6 +101,10 @@ export const toolConfigs: ToolConfig[] = [
         modelProviderType: ModelProviderType.GOOGLE,
         storageProviderType: StorageProviderType.SUPERINTERFACE_CLOUD,
       },
+      {
+        modelProviderType: ModelProviderType.OLLAMA,
+        storageProviderType: StorageProviderType.SUPERINTERFACE_CLOUD,
+      },
     ],
   },
   {

@@ -1,6 +1,6 @@
 {
   "name": "@superinterface/server",
-  "version": "1.9.8",
+  "version": "1.9.9",
   "type": "module",
   "bin": {
     "superinterface-server": "./bin/index.cjs"
