@@ -42,7 +42,7 @@ const serializeImageGenerationToolSize = ({
   }
 }
 
-const nativeTools = ({
+export const nativeTools = ({
   assistant,
   useOpenaiComputerTool,
 }: {
@@ -235,7 +235,8 @@ const nativeTools = ({
 
         if (
           assistant.modelProvider.type === ModelProviderType.OPEN_ROUTER ||
-          assistant.modelProvider.type === ModelProviderType.GOOGLE
+          assistant.modelProvider.type === ModelProviderType.GOOGLE ||
+          assistant.modelProvider.type === ModelProviderType.OLLAMA
         ) {
           return serializeComputerUseTool({
             tool,

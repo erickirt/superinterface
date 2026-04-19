@@ -14,6 +14,7 @@ import {
   anthropicClientAdapter,
   azureAiProjectClientAdapter,
   openRouterClientAdapter,
+  ollamaClientAdapter,
 } from 'supercompat/openai'
 import { AIProjectClient as AIProjectClientV1 } from '@azure/ai-projects'
 import {
@@ -115,10 +116,18 @@ export const clientAdapter = ({
   }
 
   if (modelProvider.type === ModelProviderType.OLLAMA) {
-    return buildOpenaiClientAdapter({
-      modelProvider,
-      baseURL: modelProvider.endpoint ?? '',
-      apiKey: 'ollama',
+    return ollamaClientAdapter({
+      ollama: new OpenAI({
+        apiKey: 'ollama',
+        baseURL: modelProvider.endpoint ?? '',
+        // @ts-expect-error duplex is not yet in the types
+        fetch: (url: RequestInfo, init?: RequestInit): Promise<Response> =>
+          fetch(url, {
+            ...(init || {}),
+            // @ts-expect-error duplex is not yet in the types
+            duplex: 'half',
+          }),
+      }),
     })
   }
 

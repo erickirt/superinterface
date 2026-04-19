@@ -53,6 +53,17 @@ describe('isToolConfigAvailable', () => {
       )
     })
 
+    it('is available for OLLAMA + SUPERINTERFACE_CLOUD', () => {
+      assert.strictEqual(
+        isToolConfigAvailable({
+          toolType: ToolType.COMPUTER_USE,
+          modelProviderType: ModelProviderType.OLLAMA,
+          storageProviderType: StorageProviderType.SUPERINTERFACE_CLOUD,
+        }),
+        true,
+      )
+    })
+
     it('is not available for OPEN_ROUTER + OPENAI_RESPONSES', () => {
       assert.strictEqual(
         isToolConfigAvailable({
